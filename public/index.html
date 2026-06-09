@@ -1124,6 +1124,49 @@
   /* History date box + item polish */
   .hist-item { transition: background var(--t-base); border-radius: var(--radius-xs); }
   .hist-datebox { box-shadow: var(--shadow-sm); }
+
+  /* ═══════════════════════════════════════════════════════
+     PHASE 8 — Admin / Settings / Notifications
+     ═══════════════════════════════════════════════════════ */
+
+  /* Primary "report to mom" card — olive accent */
+  .notif-primary-card {
+    border-color: var(--olive-light);
+    border-width: 1.5px;
+    background: linear-gradient(180deg, var(--olive-bg) 0%, rgba(255,253,249,0.92) 60%);
+  }
+
+  /* Report preview box */
+  .notif-preview-box {
+    font-size: 13px; line-height: 1.9; color: var(--text-mid);
+    white-space: pre-wrap; background: var(--cream);
+    border: 1px solid var(--brown-pale); border-radius: var(--radius-sm);
+    padding: 14px; max-height: 360px; overflow-y: auto;
+  }
+
+  /* User-settings modal: grouped admin sections */
+  .settings-group {
+    background: var(--cream); border: 1px solid var(--brown-pale);
+    border-radius: var(--radius-sm); padding: 14px; margin-bottom: 14px;
+  }
+  .settings-group-title {
+    font-size: 13px; font-weight: 700; color: var(--text-mid);
+    margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+  }
+  .settings-group-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; line-height: var(--lh-base); }
+
+  /* Pending user request row */
+  .pending-user-row {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--warm-white); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px 10px;
+  }
+
+  /* Dashboard skeleton block */
+  .dash-skeleton-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; margin-bottom: 20px; }
+  @media(min-width:600px){ .dash-skeleton-grid { grid-template-columns: repeat(4,1fr); } }
+  .dash-skel-card { height: 78px; border-radius: var(--radius-sm); }
+  .dash-skel-row  { height: 56px; border-radius: var(--radius-sm); margin-bottom: 10px; }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
@@ -1455,32 +1498,35 @@
       <div class="section-title">התראות ודוחות</div>
     </div>
 
-    <!-- Send to mom -->
-    <div class="card" style="margin-bottom:16px;border-color:var(--olive-light)">
+    <!-- Send to mom (primary) -->
+    <div class="card notif-primary-card" style="margin-bottom:16px">
       <div class="card-title">📱 דוח לאמא</div>
       <div id="notif-event-title" style="font-size:14px;color:var(--text-mid);margin-bottom:14px">טוען...</div>
       <button id="notif-send-btn" class="btn btn-green" onclick="sendToWhatsApp()" style="width:100%;font-size:15px;padding:12px">
         📱 שלח דוח ל-WhatsApp
       </button>
+      <div class="info-banner info-banner-info" style="margin-top:12px">
+        <span>ℹ️</span><span style="font-weight:500">הדוח ייפתח ב-WhatsApp — צריך ללחוץ "שלח" שם</span>
+      </div>
     </div>
 
     <!-- Priority items -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-title">🔔 פריטים לטיפול</div>
       <div id="notif-priority-list">
-        <div class="empty"><div class="emoji">⏳</div><p>טוען...</p></div>
+        <div class="state-loading">טוען...</div>
       </div>
     </div>
 
     <!-- Summary preview -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-title">📋 תצוגת הדוח</div>
-      <div id="notif-summary-preview" style="font-size:13px;line-height:1.9;color:var(--text-mid);white-space:pre-wrap;background:var(--cream);border-radius:10px;padding:14px">טוען...</div>
+      <div id="notif-summary-preview" class="notif-preview-box">טוען...</div>
     </div>
 
     <!-- Settings -->
     <div class="card">
-      <div class="card-title">⚙️ הגדרות</div>
+      <div class="card-title">⚙️ הגדרות התראות</div>
       <div class="check-item">
         <input type="checkbox" id="n1" checked>
         <label for="n1">יום שלישי — תזכורת לחדרים פנויים</label>
@@ -1599,7 +1645,12 @@
       <button class="btn btn-sm btn-outline" onclick="loadDashboard()">🔄 רענן</button>
     </div>
     <div id="dash-content">
-      <div class="dash-loading">⏳ טוען נתונים...</div>
+      <div class="dash-skeleton-grid">
+        <div class="skeleton dash-skel-card"></div>
+        <div class="skeleton dash-skel-card"></div>
+        <div class="skeleton dash-skel-card"></div>
+        <div class="skeleton dash-skel-card"></div>
+      </div>
     </div>
   </div>
 
@@ -1638,24 +1689,22 @@
         <div id="user-admin-badge" style="margin-top:4px;display:none"><span class="admin-chip">מנהל מערכת</span></div>
       </div>
     </div>
-    <div class="divider"></div>
-    <div style="margin-bottom:16px">
-      <div style="font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:10px">🔐 הרשאות מנהל</div>
-      <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px">מנהל יכול לנעול/לפתוח חדרים ולנהל הגדרות מערכת.</div>
+    <div class="section-label" style="margin-top:4px">ניהול מערכת</div>
+    <div class="settings-group">
+      <div class="settings-group-title">🔐 הרשאות מנהל</div>
+      <div class="settings-group-desc">מנהל יכול לנעול/לפתוח חדרים ולנהל הגדרות מערכת.</div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-sm btn-outline" id="btn-claim-admin" onclick="claimAdmin()">הפוך לי למנהל</button>
         <button class="btn btn-sm btn-outline" id="btn-revoke-admin" style="color:var(--terracotta);display:none" onclick="revokeAdmin()">הסר הרשאת מנהל</button>
       </div>
     </div>
-    <div id="approval-system-section" style="display:none;margin-bottom:16px">
-      <div class="divider"></div>
-      <div style="font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:6px">🔒 מערכת אישורים</div>
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">כאשר מופעל, כל משתמש חדש חייב לקבל אישור מנהל לפני הגישה לאפליקציה.</div>
+    <div id="approval-system-section" class="settings-group" style="display:none">
+      <div class="settings-group-title">🔒 מערכת אישורים</div>
+      <div class="settings-group-desc">כאשר מופעל, כל משתמש חדש חייב לקבל אישור מנהל לפני הגישה לאפליקציה.</div>
       <div id="approval-system-status"></div>
     </div>
-    <div id="pending-users-section" style="display:none;margin-bottom:16px">
-      <div class="divider"></div>
-      <div style="font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:10px">👥 בקשות גישה ממתינות</div>
+    <div id="pending-users-section" class="settings-group" style="display:none">
+      <div class="settings-group-title">👥 בקשות גישה ממתינות</div>
       <div id="pending-users-list" style="display:flex;flex-direction:column;gap:8px"></div>
     </div>
     <div class="modal-actions" style="justify-content:space-between">
@@ -2738,7 +2787,7 @@ async function loadPendingUsers() {
   if (list.length === 0) { section.style.display = 'none'; return; }
   section.style.display = 'block';
   listEl.innerHTML = list.map(u => `
-    <div style="display:flex;align-items:center;gap:8px;background:var(--cream);border-radius:8px;padding:8px 10px">
+    <div class="pending-user-row">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:600;color:var(--brown);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.name)}</div>
         <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.email)}</div>
@@ -4694,7 +4743,7 @@ function loadNotifications() {
     const labMap   = { high:'⚠ דחוף', med:'⚠ חסר', ok:'✓ אושר', bday:'🎂' };
 
     prioEl.innerHTML = items.length === 0
-      ? '<div class="empty"><div class="emoji">✅</div><p>הכל מסודר לשבת!</p></div>'
+      ? '<div class="state-empty"><div class="se-icon">✅</div><div class="se-title">הכל מסודר לשבת!</div></div>'
       : items.map(it=>`
           <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--brown-pale)">
             <span class="badge ${colorMap[it.p]}" style="white-space:nowrap">${labMap[it.p]}</span>
@@ -6216,10 +6265,17 @@ const DASH_COLLECTIONS = [
 
 let _dashLoaded = false;
 
+function _dashSkeleton() {
+  const cards = Array(4).fill('<div class="skeleton dash-skel-card"></div>').join('');
+  const rows  = Array(4).fill('<div class="skeleton dash-skel-row"></div>').join('');
+  return `<div class="dash-skeleton-grid">${cards}</div>
+    <div class="dash-chart-wrap">${rows}</div>`;
+}
+
 async function loadDashboard() {
   const el = document.getElementById('dash-content');
   if (!el) return;
-  el.innerHTML = '<div class="dash-loading">⏳ טוען נתונים...</div>';
+  el.innerHTML = _dashSkeleton();
   _dashLoaded = false;
 
   try {
