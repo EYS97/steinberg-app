@@ -990,6 +990,183 @@
   .ann-text { font-size: 13px; color: var(--text-mid); line-height: var(--lh-base); }
   .ann-meta { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
   .ann-empty { padding: 20px 0; text-align: center; color: var(--text-muted); font-size: 13px; }
+  .ann-del-btn {
+    background: none; border: none; cursor: pointer; color: var(--text-muted);
+    font-size: 16px; padding: 0 4px; flex-shrink: 0; line-height: 1;
+    border-radius: var(--radius-xs); transition: color var(--t-base);
+  }
+  .ann-del-btn:hover { color: var(--terracotta); }
+
+  /* ═══════════════════════════════════════════════════════
+     PHASE 5 — Rooms Page (+ shared EventSelector)
+     ═══════════════════════════════════════════════════════ */
+
+  /* ── EventSelector — reusable sticky event picker ── */
+  .event-picker {
+    background: rgba(255,253,249,0.96);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1.5px solid var(--gold-light);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    box-shadow: var(--shadow-sm);
+    display: flex; align-items: center; gap: 12px;
+    position: sticky; top: 64px; z-index: 50;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 520px) { .event-picker { top: 56px; } }
+  .event-picker-icon {
+    font-size: 24px; flex-shrink: 0; line-height: 1;
+    width: 44px; height: 44px; border-radius: var(--radius-sm);
+    background: var(--gold-bg); display: flex; align-items: center; justify-content: center;
+  }
+  .event-picker-body { flex: 1; min-width: 0; }
+  .event-picker-label {
+    font-size: 11px; font-weight: 700; color: var(--gold);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;
+  }
+  .event-picker .form-select {
+    width: 100%; max-width: 100%; margin: 0;
+    border-color: var(--gold-light);
+    font-weight: 600;
+  }
+
+  /* ── Room card refinements ── */
+  .room-card { display: flex; flex-direction: column; }
+  .room-card-icon {
+    width: 46px; height: 46px; border-radius: var(--radius-sm);
+    background: var(--brown-bg); display: flex; align-items: center; justify-content: center;
+    font-size: 24px; margin-bottom: 10px;
+  }
+  .room-card.booked .room-card-icon { background: rgba(122,140,92,0.15); }
+  .room-card.locked .room-card-icon { background: rgba(196,154,60,0.15); }
+  .room-card-name { font-size: 15px; font-weight: 800; color: var(--brown); }
+  .room-card-cap  { font-size: 12px; }
+  .room-card-detail { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .room-card-status { margin-top: auto; padding-top: 10px; }
+  .room-status-meals { font-size: 10px; color: var(--text-muted); margin-top: 5px; line-height: var(--lh-base); }
+  .room-card-status .badge { gap: 4px; }
+  .room-cancel-btn { margin-top: 8px; width: 100%; font-size: 12px; }
+
+  /* ── Booking summary list ── */
+  .booking-summary-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--brown-pale); }
+  .booking-summary-row:last-child { border-bottom: none; }
+
+  /* ── Event closed banner (shared) ── */
+  .event-closed-banner {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--terracotta-bg); border: 1.5px solid var(--terracotta);
+    border-radius: var(--radius); padding: 12px 16px; margin-bottom: 12px;
+    font-size: 14px; font-weight: 600; color: var(--terracotta);
+  }
+
+  /* ── Rooms action bar ── */
+  .rooms-action-bar { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+
+  /* ═══════════════════════════════════════════════════════
+     PHASE 6 — Meals (Food) Page
+     ═══════════════════════════════════════════════════════ */
+
+  .food-action-bar {
+    display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  /* Meal section header — clearer with diner count pill */
+  .food-meal-header {
+    border: 1px solid var(--brown-pale);
+    box-shadow: var(--shadow-sm);
+  }
+  .food-meal-header span:first-child { display: flex; align-items: center; gap: 6px; }
+
+  /* Contribution (food) item — softer, card-like */
+  .food-item {
+    transition: border-color var(--t-base), box-shadow var(--t-base);
+  }
+  .food-item:hover { border-color: var(--gold-light); box-shadow: var(--shadow-sm); }
+  .food-item-name { font-weight: 600; color: var(--text); }
+
+  /* Total attendees banner (regular events) */
+  .food-total-banner {
+    margin-bottom: 14px; padding: 12px 16px;
+    background: var(--blue-bg); border: 1px solid rgba(74,124,158,0.18);
+    border-radius: var(--radius-sm);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .food-total-banner .ft-label { font-size: 14px; font-weight: 700; color: var(--blue); }
+  .food-total-banner .ft-value { font-size: 22px; font-weight: 800; color: var(--blue); }
+
+  /* Add-to-meal empty prompt */
+  .food-meal-empty { padding: 10px 0 4px; text-align: center; }
+
+  /* ═══════════════════════════════════════════════════════
+     PHASE 7 — Calendar / Family / History
+     ═══════════════════════════════════════════════════════ */
+
+  /* Compact calendar greg/heb toggle (don't stretch like full .tabs) */
+  .cal-toggle { width: auto; flex: 0 0 auto; padding: 3px; }
+  .cal-toggle .tab-btn { flex: 0 0 auto; padding: 6px 12px; }
+  .cal-header { flex-wrap: wrap; gap: 10px; }
+
+  /* Calendar legend — slightly clearer */
+  .cal-legend { padding-top: 12px; border-top: 1px solid var(--brown-pale); }
+
+  /* Section-card header (reusable list-card header with title + action) */
+  .list-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .list-card-title { font-size: 15px; font-weight: 700; }
+
+  /* Family card avatar — slightly bolder ring */
+  .family-card { gap: 12px; }
+  .family-card-avatar { box-shadow: 0 2px 8px rgba(107,76,53,0.18); }
+
+  /* History date box + item polish */
+  .hist-item { transition: background var(--t-base); border-radius: var(--radius-xs); }
+  .hist-datebox { box-shadow: var(--shadow-sm); }
+
+  /* ═══════════════════════════════════════════════════════
+     PHASE 8 — Admin / Settings / Notifications
+     ═══════════════════════════════════════════════════════ */
+
+  /* Primary "report to mom" card — olive accent */
+  .notif-primary-card {
+    border-color: var(--olive-light);
+    border-width: 1.5px;
+    background: linear-gradient(180deg, var(--olive-bg) 0%, rgba(255,253,249,0.92) 60%);
+  }
+
+  /* Report preview box */
+  .notif-preview-box {
+    font-size: 13px; line-height: 1.9; color: var(--text-mid);
+    white-space: pre-wrap; background: var(--cream);
+    border: 1px solid var(--brown-pale); border-radius: var(--radius-sm);
+    padding: 14px; max-height: 360px; overflow-y: auto;
+  }
+
+  /* User-settings modal: grouped admin sections */
+  .settings-group {
+    background: var(--cream); border: 1px solid var(--brown-pale);
+    border-radius: var(--radius-sm); padding: 14px; margin-bottom: 14px;
+  }
+  .settings-group-title {
+    font-size: 13px; font-weight: 700; color: var(--text-mid);
+    margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+  }
+  .settings-group-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; line-height: var(--lh-base); }
+
+  /* Pending user request row */
+  .pending-user-row {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--warm-white); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px 10px;
+  }
+
+  /* Dashboard skeleton block */
+  .dash-skeleton-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; margin-bottom: 20px; }
+  @media(min-width:600px){ .dash-skeleton-grid { grid-template-columns: repeat(4,1fr); } }
+  .dash-skel-card { height: 78px; border-radius: var(--radius-sm); }
+  .dash-skel-row  { height: 56px; border-radius: var(--radius-sm); margin-bottom: 10px; }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
@@ -1150,7 +1327,7 @@
       <div class="section-title">📜 היסטוריית אירועים</div>
     </div>
     <div class="card" id="history-card">
-      <div id="history-list"><div class="hist-empty">טוען...</div></div>
+      <div id="history-list"><div class="state-loading">טוען היסטוריה...</div></div>
     </div>
   </div>
 
@@ -1158,24 +1335,26 @@
   <div class="page" id="page-calendar">
     <div class="section-header">
       <div class="section-title">לוח שנה</div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div class="row flex-wrap gap-2">
         <button class="btn btn-sm btn-outline" onclick="openAddMemorial()" style="border-color:var(--memorial);color:var(--memorial)">🕯 יום זיכרון</button>
         <button class="btn btn-primary btn-sm" onclick="openAddBday()">🎂 יום הולדת</button>
-        <div class="tabs" style="margin-bottom:0">
-          <button class="tab-btn" id="tab-greg" onclick="switchCal('greg',this)">לועזי</button>
-          <button class="tab-btn active" id="tab-heb" onclick="switchCal('heb',this)">עברי</button>
-        </div>
       </div>
     </div>
 
     <div class="card">
       <div class="cal-header">
         <div class="cal-nav">
-          <button onclick="changeMonth(-1)">&#x2192;</button>
-          <button onclick="changeMonth(1)">&#x2190;</button>
+          <button onclick="changeMonth(-1)" aria-label="חודש קודם">&#x2192;</button>
+          <button onclick="changeMonth(1)" aria-label="חודש הבא">&#x2190;</button>
         </div>
         <div style="font-size:17px;font-weight:700;color:var(--brown)" id="cal-title"></div>
-        <button class="btn btn-sm btn-outline" onclick="goToday()">היום</button>
+        <div class="row gap-2">
+          <div class="tabs cal-toggle" style="margin-bottom:0">
+            <button class="tab-btn" id="tab-greg" onclick="switchCal('greg',this)">לועזי</button>
+            <button class="tab-btn active" id="tab-heb" onclick="switchCal('heb',this)">עברי</button>
+          </div>
+          <button class="btn btn-sm btn-outline" onclick="goToday()">היום</button>
+        </div>
       </div>
       <div class="cal-grid" id="cal-days-header">
         <div class="cal-day-name">א׳</div>
@@ -1222,20 +1401,30 @@
       <div class="section-title">חדרים</div>
     </div>
 
-    <!-- Step 1: event picker -->
-    <div class="card" style="text-align:center;padding:24px 20px">
-      <div style="font-size:28px;margin-bottom:10px">🛏</div>
-      <div style="font-size:15px;font-weight:600;color:var(--brown);margin-bottom:14px">לאיזו שבת / חג?</div>
-      <select class="form-select event-select" id="room-event-select"
-        onchange="loadBookingsForEvent(this.value);renderEventClosedBtn();filterRoomsContent(this.value)"
-        style="max-width:300px;margin:0 auto;display:block">
-        <option value="">-- בחר שבת / חג --</option>
-      </select>
+    <!-- Step 1: event picker (sticky) -->
+    <div class="event-picker">
+      <div class="event-picker-icon">🛏</div>
+      <div class="event-picker-body">
+        <div class="event-picker-label">לאיזו שבת / חג?</div>
+        <select class="form-select event-select" id="room-event-select"
+          onchange="loadBookingsForEvent(this.value);renderEventClosedBtn();filterRoomsContent(this.value)">
+          <option value="">-- בחר שבת / חג --</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- No-selection hint -->
+    <div id="rooms-empty-hint" class="card">
+      <div class="state-empty">
+        <div class="se-icon">👆</div>
+        <div class="se-title">בחרו שבת או חג כדי להתחיל</div>
+        <div class="se-sub">לאחר הבחירה יוצגו החדרים הפנויים והתפוסים</div>
+      </div>
     </div>
 
     <!-- Step 2: content shown after event selected -->
-    <div id="rooms-content" style="display:none;margin-top:16px">
-      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+    <div id="rooms-content" style="display:none">
+      <div class="rooms-action-bar">
         <button id="event-close-btn" style="display:none" onclick="toggleEventClosed()" class="btn btn-sm btn-outline"></button>
       </div>
 
@@ -1244,7 +1433,7 @@
       <div class="card" style="margin-top:16px">
         <div class="card-title">🧾 סיכום הזמנות</div>
         <div id="booking-summary">
-          <div class="empty"><div class="emoji">🛏</div><p>אין הזמנות לאירוע זה</p></div>
+          <div class="state-empty"><div class="se-icon">🛏</div><div class="se-title">אין הזמנות לאירוע זה</div></div>
         </div>
       </div>
     </div>
@@ -1256,19 +1445,29 @@
       <div class="section-title">סעודות</div>
     </div>
 
-    <!-- Step 1: event picker -->
-    <div class="card" style="text-align:center;padding:24px 20px">
-      <div style="font-size:28px;margin-bottom:10px">🍽</div>
-      <div style="font-size:15px;font-weight:600;color:var(--brown);margin-bottom:14px">לאיזו שבת / חג מכינים?</div>
-      <select class="form-select event-select" id="food-event-select" onchange="filterFood(this.value)"
-        style="max-width:300px;margin:0 auto;display:block">
-        <option value="">-- בחר שבת / חג --</option>
-      </select>
+    <!-- Step 1: event picker (sticky) -->
+    <div class="event-picker">
+      <div class="event-picker-icon">🍽</div>
+      <div class="event-picker-body">
+        <div class="event-picker-label">לאיזו שבת / חג מכינים?</div>
+        <select class="form-select event-select" id="food-event-select" onchange="filterFood(this.value)">
+          <option value="">-- בחר שבת / חג --</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- No-selection hint -->
+    <div id="food-empty-hint" class="card">
+      <div class="state-empty">
+        <div class="se-icon">👆</div>
+        <div class="se-title">בחרו שבת או חג כדי להתחיל</div>
+        <div class="se-sub">לאחר הבחירה תוכלו לרשום מנות וסועדים</div>
+      </div>
     </div>
 
     <!-- Step 2: content (shown after event selected) -->
-    <div id="food-content" style="display:none;margin-top:16px">
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px">
+    <div id="food-content" style="display:none">
+      <div class="food-action-bar">
         <button class="btn btn-sm btn-outline" onclick="openAddGuest()">+ אורח חיצוני</button>
         <button class="btn btn-primary btn-sm" onclick="openAddFood()">אני בא 🙋</button>
       </div>
@@ -1276,7 +1475,7 @@
       <div class="card" style="margin-top:16px" id="guests-card">
         <div class="card-title">👤 אורחים חיצוניים</div>
         <div id="guests-list">
-          <div class="empty" style="padding:16px"><p>אין אורחים חיצוניים רשומים</p></div>
+          <div class="state-empty"><div class="se-icon">👤</div><div class="se-title">אין אורחים חיצוניים רשומים</div></div>
         </div>
       </div>
     </div>
@@ -1299,32 +1498,35 @@
       <div class="section-title">התראות ודוחות</div>
     </div>
 
-    <!-- Send to mom -->
-    <div class="card" style="margin-bottom:16px;border-color:var(--olive-light)">
+    <!-- Send to mom (primary) -->
+    <div class="card notif-primary-card" style="margin-bottom:16px">
       <div class="card-title">📱 דוח לאמא</div>
       <div id="notif-event-title" style="font-size:14px;color:var(--text-mid);margin-bottom:14px">טוען...</div>
       <button id="notif-send-btn" class="btn btn-green" onclick="sendToWhatsApp()" style="width:100%;font-size:15px;padding:12px">
         📱 שלח דוח ל-WhatsApp
       </button>
+      <div class="info-banner info-banner-info" style="margin-top:12px">
+        <span>ℹ️</span><span style="font-weight:500">הדוח ייפתח ב-WhatsApp — צריך ללחוץ "שלח" שם</span>
+      </div>
     </div>
 
     <!-- Priority items -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-title">🔔 פריטים לטיפול</div>
       <div id="notif-priority-list">
-        <div class="empty"><div class="emoji">⏳</div><p>טוען...</p></div>
+        <div class="state-loading">טוען...</div>
       </div>
     </div>
 
     <!-- Summary preview -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-title">📋 תצוגת הדוח</div>
-      <div id="notif-summary-preview" style="font-size:13px;line-height:1.9;color:var(--text-mid);white-space:pre-wrap;background:var(--cream);border-radius:10px;padding:14px">טוען...</div>
+      <div id="notif-summary-preview" class="notif-preview-box">טוען...</div>
     </div>
 
     <!-- Settings -->
     <div class="card">
-      <div class="card-title">⚙️ הגדרות</div>
+      <div class="card-title">⚙️ הגדרות התראות</div>
       <div class="check-item">
         <input type="checkbox" id="n1" checked>
         <label for="n1">יום שלישי — תזכורת לחדרים פנויים</label>
@@ -1443,7 +1645,12 @@
       <button class="btn btn-sm btn-outline" onclick="loadDashboard()">🔄 רענן</button>
     </div>
     <div id="dash-content">
-      <div class="dash-loading">⏳ טוען נתונים...</div>
+      <div class="dash-skeleton-grid">
+        <div class="skeleton dash-skel-card"></div>
+        <div class="skeleton dash-skel-card"></div>
+        <div class="skeleton dash-skel-card"></div>
+        <div class="skeleton dash-skel-card"></div>
+      </div>
     </div>
   </div>
 
@@ -1482,24 +1689,22 @@
         <div id="user-admin-badge" style="margin-top:4px;display:none"><span class="admin-chip">מנהל מערכת</span></div>
       </div>
     </div>
-    <div class="divider"></div>
-    <div style="margin-bottom:16px">
-      <div style="font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:10px">🔐 הרשאות מנהל</div>
-      <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px">מנהל יכול לנעול/לפתוח חדרים ולנהל הגדרות מערכת.</div>
+    <div class="section-label" style="margin-top:4px">ניהול מערכת</div>
+    <div class="settings-group">
+      <div class="settings-group-title">🔐 הרשאות מנהל</div>
+      <div class="settings-group-desc">מנהל יכול לנעול/לפתוח חדרים ולנהל הגדרות מערכת.</div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-sm btn-outline" id="btn-claim-admin" onclick="claimAdmin()">הפוך לי למנהל</button>
         <button class="btn btn-sm btn-outline" id="btn-revoke-admin" style="color:var(--terracotta);display:none" onclick="revokeAdmin()">הסר הרשאת מנהל</button>
       </div>
     </div>
-    <div id="approval-system-section" style="display:none;margin-bottom:16px">
-      <div class="divider"></div>
-      <div style="font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:6px">🔒 מערכת אישורים</div>
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">כאשר מופעל, כל משתמש חדש חייב לקבל אישור מנהל לפני הגישה לאפליקציה.</div>
+    <div id="approval-system-section" class="settings-group" style="display:none">
+      <div class="settings-group-title">🔒 מערכת אישורים</div>
+      <div class="settings-group-desc">כאשר מופעל, כל משתמש חדש חייב לקבל אישור מנהל לפני הגישה לאפליקציה.</div>
       <div id="approval-system-status"></div>
     </div>
-    <div id="pending-users-section" style="display:none;margin-bottom:16px">
-      <div class="divider"></div>
-      <div style="font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:10px">👥 בקשות גישה ממתינות</div>
+    <div id="pending-users-section" class="settings-group" style="display:none">
+      <div class="settings-group-title">👥 בקשות גישה ממתינות</div>
       <div id="pending-users-list" style="display:flex;flex-direction:column;gap:8px"></div>
     </div>
     <div class="modal-actions" style="justify-content:space-between">
@@ -2582,7 +2787,7 @@ async function loadPendingUsers() {
   if (list.length === 0) { section.style.display = 'none'; return; }
   section.style.display = 'block';
   listEl.innerHTML = list.map(u => `
-    <div style="display:flex;align-items:center;gap:8px;background:var(--cream);border-radius:8px;padding:8px 10px">
+    <div class="pending-user-row">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:600;color:var(--brown);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.name)}</div>
         <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.email)}</div>
@@ -3092,7 +3297,7 @@ function renderBirthdays(bdays) {
   const list = document.getElementById('birthdays-list');
   if (!list) return;
   if (bdays.length === 0) {
-    list.innerHTML = `<div class="empty"><div class="emoji">🎂</div><p>אין ימי הולדת רשומים עדיין</p><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="openModal('modal-add-bday')">+ הוסף יום הולדת</button></div>`;
+    list.innerHTML = `<div class="state-empty"><div class="se-icon">🎂</div><div class="se-title">אין ימי הולדת רשומים עדיין</div><button class="btn btn-primary btn-sm mt-2" onclick="openModal('modal-add-bday')">+ הוסף יום הולדת</button></div>`;
     return;
   }
   const months = ['ינו','פבר','מרץ','אפר','מאי','יוני','יולי','אוג','ספט','אוק','נוב','דצמ'];
@@ -3383,7 +3588,7 @@ function renderMemorials(mems) {
   const list = document.getElementById('memorials-list');
   if (!list) return;
   if (!mems || mems.length === 0) {
-    list.innerHTML = '<div class="empty"><div class="emoji">🕯</div><p>אין ימי זיכרון רשומים עדיין</p></div>';
+    list.innerHTML = '<div class="state-empty"><div class="se-icon">🕯</div><div class="se-title">אין ימי זיכרון רשומים עדיין</div></div>';
     return;
   }
   const months = ['ינו','פבר','מרץ','אפר','מאי','יוני','יולי','אוג','ספט','אוק','נוב','דצמ'];
@@ -3522,6 +3727,8 @@ function loadFood() {
 function filterFood(eventId) {
   const content = document.getElementById('food-content');
   if (content) content.style.display = eventId ? '' : 'none';
+  const hint = document.getElementById('food-empty-hint');
+  if (hint) hint.style.display = eventId ? 'none' : '';
   const filtered = eventId ? _allFood.filter(it => it.eventId === eventId) : [];
   renderFood(filtered);
   filterGuests(eventId);
@@ -3529,17 +3736,14 @@ function filterFood(eventId) {
 
 function renderFoodRegular(card, items) {
   if (!items.length) {
-    card.innerHTML = `<div style="text-align:center;padding:28px;color:var(--text-muted)">
-      <div style="font-size:36px;margin-bottom:10px">👥</div>
-      <div style="font-size:14px">אין נרשמים עדיין</div>
-    </div>`;
+    card.innerHTML = `<div class="state-empty"><div class="se-icon">👥</div><div class="se-title">אין נרשמים עדיין</div></div>`;
     return;
   }
   const total = items.reduce((s, it) => s + (parseInt(it.headcount)||1), 0);
   card.innerHTML = `
-    <div style="margin-bottom:14px;padding:10px 16px;background:var(--blue-bg);border-radius:var(--radius-sm);display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:14px;font-weight:700;color:var(--blue)">👥 סה״כ מגיעים</span>
-      <span style="font-size:22px;font-weight:800;color:var(--blue)">${total} נפשות</span>
+    <div class="food-total-banner">
+      <span class="ft-label">👥 סה״כ מגיעים</span>
+      <span class="ft-value">${total} נפשות</span>
     </div>
     ${items.map(it => `
       <div class="food-item">
@@ -3610,7 +3814,7 @@ function renderFood(items) {
          </div>`
       : '';
     const emptyMeal = mealItems.length === 0
-      ? `<div style="padding:10px 0 4px;text-align:center">
+      ? `<div class="food-meal-empty">
            <button class="btn btn-sm btn-outline" style="font-size:12px" onclick="openAddFood('${esc(meal)}')">+ הוסף מנה ל${esc(meal)}</button>
          </div>`
       : '';
@@ -4012,7 +4216,7 @@ function renderGuests(guests, permanentGuests) {
     ...(permanentGuests||[]).map(g => ({ ...g, _perm: true }))
   ];
   if (!allItems.length) {
-    card.innerHTML = '<div class="empty" style="padding:16px 0"><p>אין אורחים חיצוניים לאירוע זה</p></div>';
+    card.innerHTML = '<div class="state-empty"><div class="se-icon">👤</div><div class="se-title">אין אורחים חיצוניים לאירוע זה</div></div>';
     return;
   }
   const MEAL_ORDER = ['ליל שבת','סעודת שבת','סעודה שלישית','ליל חג','סעודת חג'];
@@ -4105,15 +4309,17 @@ function renderAnnouncements() {
     to.setHours(0,0,0,0);
     const daysLeft = Math.ceil((to - today) / 86400000);
     const canDelete = currentUser && (currentUser.uid === a.authorUid || isAdmin);
-    return `<div class="announce-item">
-      <div class="announce-dot"></div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;color:var(--text);line-height:1.5">${esc(a.text)}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">
-          ${esc(a.authorName)} · ${daysLeft === 0 ? 'עד היום' : `עוד ${daysLeft} ימים`}
-        </div>
+    const expiry = daysLeft <= 0 ? 'עד היום'
+                 : daysLeft === 1 ? 'עד מחר'
+                 : `עוד ${daysLeft} ימים`;
+    const expiryClass = daysLeft <= 1 ? 'c-terra fw-600' : 'c-muted';
+    return `<div class="ann-item">
+      <div class="ann-dot"></div>
+      <div class="ann-body">
+        <div class="ann-text">${esc(a.text)}</div>
+        <div class="ann-meta">${esc(a.authorName)} · <span class="${expiryClass}">⏳ ${expiry}</span></div>
       </div>
-      ${canDelete ? `<button onclick="deleteAnnouncement('${a.id}')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px;padding:0 4px;flex-shrink:0" title="מחק הודעה">🗑</button>` : ''}
+      ${canDelete ? `<button onclick="deleteAnnouncement('${a.id}')" class="ann-del-btn" title="מחק הודעה">🗑</button>` : ''}
     </div>`;
   }).join('');
 }
@@ -4226,7 +4432,7 @@ function loadHistory() {
 
   el.innerHTML = rows.length
     ? rows.join('')
-    : '<div class="hist-empty"><div style="font-size:40px;margin-bottom:8px">📜</div>אין פעילות מוקלטת עדיין</div>';
+    : '<div class="state-empty"><div class="se-icon">📜</div><div class="se-title">אין פעילות מוקלטת עדיין</div></div>';
 }
 
 function getThisWeekFocusEvents() {
@@ -4537,7 +4743,7 @@ function loadNotifications() {
     const labMap   = { high:'⚠ דחוף', med:'⚠ חסר', ok:'✓ אושר', bday:'🎂' };
 
     prioEl.innerHTML = items.length === 0
-      ? '<div class="empty"><div class="emoji">✅</div><p>הכל מסודר לשבת!</p></div>'
+      ? '<div class="state-empty"><div class="se-icon">✅</div><div class="se-title">הכל מסודר לשבת!</div></div>'
       : items.map(it=>`
           <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--brown-pale)">
             <span class="badge ${colorMap[it.p]}" style="white-space:nowrap">${labMap[it.p]}</span>
@@ -4815,14 +5021,14 @@ function renderRooms() {
         <div class="room-card-icon">${r.icon}</div>
         <div class="room-card-name">${r.name}</div>
         <div class="room-card-cap">${r.cap}</div>
-        <div class="room-card-cap" style="color:var(--text-muted);font-size:11px">${r.detail}</div>
-        <div class="room-card-status" style="margin-top:10px">
+        <div class="room-card-detail">${r.detail}</div>
+        <div class="room-card-status">
           ${r.locked ? '<span class="badge badge-amber">🔒 נעול</span>' :
-            isBooked ? `<span class="badge badge-green">✓ ${booking.isExternalGuest ? '👤 ' : ''}${esc(booking.familyName)}</span>${Array.isArray(booking.mealParticipation) ? `<div style="font-size:10px;color:var(--text-muted);margin-top:4px">${booking.mealParticipation.map(m=>esc(m)).join(' · ')}</div>` : ''}` :
-            isClosed ? '<span class="badge" style="background:var(--terracotta-bg);color:var(--terracotta)">🔒 סגור</span>' :
-            '<span class="badge badge-red">פנוי</span>'}
+            isBooked ? `<span class="badge badge-blue">✓ ${booking.isExternalGuest ? '👤 ' : ''}${esc(booking.familyName)}</span>${Array.isArray(booking.mealParticipation) ? `<div class="room-status-meals">🍽 ${booking.mealParticipation.map(m=>esc(m)).join(' · ')}</div>` : ''}` :
+            isClosed ? '<span class="badge badge-red">🔒 סגור</span>' :
+            '<span class="badge badge-green" style="background:var(--olive-bg);color:var(--olive)">● פנוי</span>'}
         </div>
-        ${isBooked ? `<button class="btn btn-sm btn-outline" style="margin-top:8px;width:100%;font-size:12px" onclick="event.stopPropagation();cancelBooking('${booking.id}')">בטל הזמנה</button>` : ''}
+        ${isBooked ? `<button class="btn btn-sm btn-outline room-cancel-btn" onclick="event.stopPropagation();cancelBooking('${booking.id}')">בטל הזמנה</button>` : ''}
       </div>`;
   }).join('');
 }
@@ -4836,7 +5042,7 @@ let bookType = 'family';
 function renderBookingSummary(bookings) {
   const el = document.getElementById('booking-summary');
   if (!bookings.length) {
-    el.innerHTML = '<div class="empty"><div class="emoji">🛏</div><p>אין הזמנות לאירוע זה</p></div>';
+    el.innerHTML = '<div class="state-empty"><div class="se-icon">🛏</div><div class="se-title">אין הזמנות לאירוע זה</div></div>';
     return;
   }
   el.innerHTML = bookings.map(b => {
@@ -4844,7 +5050,7 @@ function renderBookingSummary(bookings) {
     const color = avatarColor(b.familyName || '?');
     const avatarContent = b.isExternalGuest ? '👤' : initials(b.familyName||'?');
     const guestTag = b.isExternalGuest ? ' <span style="font-size:11px;color:var(--text-muted)">(אורח)</span>' : '';
-    return `<div class="family-row">
+    return `<div class="booking-summary-row">
       <div class="avatar" style="background:${color}">${avatarContent}</div>
       <div class="family-info">
         <div class="family-name">${room?.name||b.roomId} — ${esc(b.familyName||'')}${guestTag}</div>
@@ -4861,6 +5067,8 @@ function renderBookingSummary(bookings) {
 function filterRoomsContent(eventId) {
   const content = document.getElementById('rooms-content');
   if (content) content.style.display = eventId ? '' : 'none';
+  const hint = document.getElementById('rooms-empty-hint');
+  if (hint) hint.style.display = eventId ? 'none' : '';
 }
 
 function loadBookingsForEvent(eventId) {
@@ -6057,10 +6265,17 @@ const DASH_COLLECTIONS = [
 
 let _dashLoaded = false;
 
+function _dashSkeleton() {
+  const cards = Array(4).fill('<div class="skeleton dash-skel-card"></div>').join('');
+  const rows  = Array(4).fill('<div class="skeleton dash-skel-row"></div>').join('');
+  return `<div class="dash-skeleton-grid">${cards}</div>
+    <div class="dash-chart-wrap">${rows}</div>`;
+}
+
 async function loadDashboard() {
   const el = document.getElementById('dash-content');
   if (!el) return;
-  el.innerHTML = '<div class="dash-loading">⏳ טוען נתונים...</div>';
+  el.innerHTML = _dashSkeleton();
   _dashLoaded = false;
 
   try {
