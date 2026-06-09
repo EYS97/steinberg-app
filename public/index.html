@@ -990,6 +990,12 @@
   .ann-text { font-size: 13px; color: var(--text-mid); line-height: var(--lh-base); }
   .ann-meta { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
   .ann-empty { padding: 20px 0; text-align: center; color: var(--text-muted); font-size: 13px; }
+  .ann-del-btn {
+    background: none; border: none; cursor: pointer; color: var(--text-muted);
+    font-size: 16px; padding: 0 4px; flex-shrink: 0; line-height: 1;
+    border-radius: var(--radius-xs); transition: color var(--t-base);
+  }
+  .ann-del-btn:hover { color: var(--terracotta); }
 
   /* ═══════════════════════════════════════════════════════
      PHASE 5 — Rooms Page (+ shared EventSelector)
@@ -1091,6 +1097,33 @@
 
   /* Add-to-meal empty prompt */
   .food-meal-empty { padding: 10px 0 4px; text-align: center; }
+
+  /* ═══════════════════════════════════════════════════════
+     PHASE 7 — Calendar / Family / History
+     ═══════════════════════════════════════════════════════ */
+
+  /* Compact calendar greg/heb toggle (don't stretch like full .tabs) */
+  .cal-toggle { width: auto; flex: 0 0 auto; padding: 3px; }
+  .cal-toggle .tab-btn { flex: 0 0 auto; padding: 6px 12px; }
+  .cal-header { flex-wrap: wrap; gap: 10px; }
+
+  /* Calendar legend — slightly clearer */
+  .cal-legend { padding-top: 12px; border-top: 1px solid var(--brown-pale); }
+
+  /* Section-card header (reusable list-card header with title + action) */
+  .list-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .list-card-title { font-size: 15px; font-weight: 700; }
+
+  /* Family card avatar — slightly bolder ring */
+  .family-card { gap: 12px; }
+  .family-card-avatar { box-shadow: 0 2px 8px rgba(107,76,53,0.18); }
+
+  /* History date box + item polish */
+  .hist-item { transition: background var(--t-base); border-radius: var(--radius-xs); }
+  .hist-datebox { box-shadow: var(--shadow-sm); }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
@@ -1251,7 +1284,7 @@
       <div class="section-title">📜 היסטוריית אירועים</div>
     </div>
     <div class="card" id="history-card">
-      <div id="history-list"><div class="hist-empty">טוען...</div></div>
+      <div id="history-list"><div class="state-loading">טוען היסטוריה...</div></div>
     </div>
   </div>
 
@@ -1259,24 +1292,26 @@
   <div class="page" id="page-calendar">
     <div class="section-header">
       <div class="section-title">לוח שנה</div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div class="row flex-wrap gap-2">
         <button class="btn btn-sm btn-outline" onclick="openAddMemorial()" style="border-color:var(--memorial);color:var(--memorial)">🕯 יום זיכרון</button>
         <button class="btn btn-primary btn-sm" onclick="openAddBday()">🎂 יום הולדת</button>
-        <div class="tabs" style="margin-bottom:0">
-          <button class="tab-btn" id="tab-greg" onclick="switchCal('greg',this)">לועזי</button>
-          <button class="tab-btn active" id="tab-heb" onclick="switchCal('heb',this)">עברי</button>
-        </div>
       </div>
     </div>
 
     <div class="card">
       <div class="cal-header">
         <div class="cal-nav">
-          <button onclick="changeMonth(-1)">&#x2192;</button>
-          <button onclick="changeMonth(1)">&#x2190;</button>
+          <button onclick="changeMonth(-1)" aria-label="חודש קודם">&#x2192;</button>
+          <button onclick="changeMonth(1)" aria-label="חודש הבא">&#x2190;</button>
         </div>
         <div style="font-size:17px;font-weight:700;color:var(--brown)" id="cal-title"></div>
-        <button class="btn btn-sm btn-outline" onclick="goToday()">היום</button>
+        <div class="row gap-2">
+          <div class="tabs cal-toggle" style="margin-bottom:0">
+            <button class="tab-btn" id="tab-greg" onclick="switchCal('greg',this)">לועזי</button>
+            <button class="tab-btn active" id="tab-heb" onclick="switchCal('heb',this)">עברי</button>
+          </div>
+          <button class="btn btn-sm btn-outline" onclick="goToday()">היום</button>
+        </div>
       </div>
       <div class="cal-grid" id="cal-days-header">
         <div class="cal-day-name">א׳</div>
@@ -3213,7 +3248,7 @@ function renderBirthdays(bdays) {
   const list = document.getElementById('birthdays-list');
   if (!list) return;
   if (bdays.length === 0) {
-    list.innerHTML = `<div class="empty"><div class="emoji">🎂</div><p>אין ימי הולדת רשומים עדיין</p><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="openModal('modal-add-bday')">+ הוסף יום הולדת</button></div>`;
+    list.innerHTML = `<div class="state-empty"><div class="se-icon">🎂</div><div class="se-title">אין ימי הולדת רשומים עדיין</div><button class="btn btn-primary btn-sm mt-2" onclick="openModal('modal-add-bday')">+ הוסף יום הולדת</button></div>`;
     return;
   }
   const months = ['ינו','פבר','מרץ','אפר','מאי','יוני','יולי','אוג','ספט','אוק','נוב','דצמ'];
@@ -3504,7 +3539,7 @@ function renderMemorials(mems) {
   const list = document.getElementById('memorials-list');
   if (!list) return;
   if (!mems || mems.length === 0) {
-    list.innerHTML = '<div class="empty"><div class="emoji">🕯</div><p>אין ימי זיכרון רשומים עדיין</p></div>';
+    list.innerHTML = '<div class="state-empty"><div class="se-icon">🕯</div><div class="se-title">אין ימי זיכרון רשומים עדיין</div></div>';
     return;
   }
   const months = ['ינו','פבר','מרץ','אפר','מאי','יוני','יולי','אוג','ספט','אוק','נוב','דצמ'];
@@ -4225,15 +4260,17 @@ function renderAnnouncements() {
     to.setHours(0,0,0,0);
     const daysLeft = Math.ceil((to - today) / 86400000);
     const canDelete = currentUser && (currentUser.uid === a.authorUid || isAdmin);
-    return `<div class="announce-item">
-      <div class="announce-dot"></div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;color:var(--text);line-height:1.5">${esc(a.text)}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">
-          ${esc(a.authorName)} · ${daysLeft === 0 ? 'עד היום' : `עוד ${daysLeft} ימים`}
-        </div>
+    const expiry = daysLeft <= 0 ? 'עד היום'
+                 : daysLeft === 1 ? 'עד מחר'
+                 : `עוד ${daysLeft} ימים`;
+    const expiryClass = daysLeft <= 1 ? 'c-terra fw-600' : 'c-muted';
+    return `<div class="ann-item">
+      <div class="ann-dot"></div>
+      <div class="ann-body">
+        <div class="ann-text">${esc(a.text)}</div>
+        <div class="ann-meta">${esc(a.authorName)} · <span class="${expiryClass}">⏳ ${expiry}</span></div>
       </div>
-      ${canDelete ? `<button onclick="deleteAnnouncement('${a.id}')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px;padding:0 4px;flex-shrink:0" title="מחק הודעה">🗑</button>` : ''}
+      ${canDelete ? `<button onclick="deleteAnnouncement('${a.id}')" class="ann-del-btn" title="מחק הודעה">🗑</button>` : ''}
     </div>`;
   }).join('');
 }
@@ -4346,7 +4383,7 @@ function loadHistory() {
 
   el.innerHTML = rows.length
     ? rows.join('')
-    : '<div class="hist-empty"><div style="font-size:40px;margin-bottom:8px">📜</div>אין פעילות מוקלטת עדיין</div>';
+    : '<div class="state-empty"><div class="se-icon">📜</div><div class="se-title">אין פעילות מוקלטת עדיין</div></div>';
 }
 
 function getThisWeekFocusEvents() {
