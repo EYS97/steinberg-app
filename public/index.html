@@ -1055,6 +1055,42 @@
 
   /* ── Rooms action bar ── */
   .rooms-action-bar { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+
+  /* ═══════════════════════════════════════════════════════
+     PHASE 6 — Meals (Food) Page
+     ═══════════════════════════════════════════════════════ */
+
+  .food-action-bar {
+    display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  /* Meal section header — clearer with diner count pill */
+  .food-meal-header {
+    border: 1px solid var(--brown-pale);
+    box-shadow: var(--shadow-sm);
+  }
+  .food-meal-header span:first-child { display: flex; align-items: center; gap: 6px; }
+
+  /* Contribution (food) item — softer, card-like */
+  .food-item {
+    transition: border-color var(--t-base), box-shadow var(--t-base);
+  }
+  .food-item:hover { border-color: var(--gold-light); box-shadow: var(--shadow-sm); }
+  .food-item-name { font-weight: 600; color: var(--text); }
+
+  /* Total attendees banner (regular events) */
+  .food-total-banner {
+    margin-bottom: 14px; padding: 12px 16px;
+    background: var(--blue-bg); border: 1px solid rgba(74,124,158,0.18);
+    border-radius: var(--radius-sm);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .food-total-banner .ft-label { font-size: 14px; font-weight: 700; color: var(--blue); }
+  .food-total-banner .ft-value { font-size: 22px; font-weight: 800; color: var(--blue); }
+
+  /* Add-to-meal empty prompt */
+  .food-meal-empty { padding: 10px 0 4px; text-align: center; }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
@@ -1331,19 +1367,29 @@
       <div class="section-title">סעודות</div>
     </div>
 
-    <!-- Step 1: event picker -->
-    <div class="card" style="text-align:center;padding:24px 20px">
-      <div style="font-size:28px;margin-bottom:10px">🍽</div>
-      <div style="font-size:15px;font-weight:600;color:var(--brown);margin-bottom:14px">לאיזו שבת / חג מכינים?</div>
-      <select class="form-select event-select" id="food-event-select" onchange="filterFood(this.value)"
-        style="max-width:300px;margin:0 auto;display:block">
-        <option value="">-- בחר שבת / חג --</option>
-      </select>
+    <!-- Step 1: event picker (sticky) -->
+    <div class="event-picker">
+      <div class="event-picker-icon">🍽</div>
+      <div class="event-picker-body">
+        <div class="event-picker-label">לאיזו שבת / חג מכינים?</div>
+        <select class="form-select event-select" id="food-event-select" onchange="filterFood(this.value)">
+          <option value="">-- בחר שבת / חג --</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- No-selection hint -->
+    <div id="food-empty-hint" class="card">
+      <div class="state-empty">
+        <div class="se-icon">👆</div>
+        <div class="se-title">בחרו שבת או חג כדי להתחיל</div>
+        <div class="se-sub">לאחר הבחירה תוכלו לרשום מנות וסועדים</div>
+      </div>
     </div>
 
     <!-- Step 2: content (shown after event selected) -->
-    <div id="food-content" style="display:none;margin-top:16px">
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px">
+    <div id="food-content" style="display:none">
+      <div class="food-action-bar">
         <button class="btn btn-sm btn-outline" onclick="openAddGuest()">+ אורח חיצוני</button>
         <button class="btn btn-primary btn-sm" onclick="openAddFood()">אני בא 🙋</button>
       </div>
@@ -1351,7 +1397,7 @@
       <div class="card" style="margin-top:16px" id="guests-card">
         <div class="card-title">👤 אורחים חיצוניים</div>
         <div id="guests-list">
-          <div class="empty" style="padding:16px"><p>אין אורחים חיצוניים רשומים</p></div>
+          <div class="state-empty"><div class="se-icon">👤</div><div class="se-title">אין אורחים חיצוניים רשומים</div></div>
         </div>
       </div>
     </div>
@@ -3597,6 +3643,8 @@ function loadFood() {
 function filterFood(eventId) {
   const content = document.getElementById('food-content');
   if (content) content.style.display = eventId ? '' : 'none';
+  const hint = document.getElementById('food-empty-hint');
+  if (hint) hint.style.display = eventId ? 'none' : '';
   const filtered = eventId ? _allFood.filter(it => it.eventId === eventId) : [];
   renderFood(filtered);
   filterGuests(eventId);
@@ -3604,17 +3652,14 @@ function filterFood(eventId) {
 
 function renderFoodRegular(card, items) {
   if (!items.length) {
-    card.innerHTML = `<div style="text-align:center;padding:28px;color:var(--text-muted)">
-      <div style="font-size:36px;margin-bottom:10px">👥</div>
-      <div style="font-size:14px">אין נרשמים עדיין</div>
-    </div>`;
+    card.innerHTML = `<div class="state-empty"><div class="se-icon">👥</div><div class="se-title">אין נרשמים עדיין</div></div>`;
     return;
   }
   const total = items.reduce((s, it) => s + (parseInt(it.headcount)||1), 0);
   card.innerHTML = `
-    <div style="margin-bottom:14px;padding:10px 16px;background:var(--blue-bg);border-radius:var(--radius-sm);display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:14px;font-weight:700;color:var(--blue)">👥 סה״כ מגיעים</span>
-      <span style="font-size:22px;font-weight:800;color:var(--blue)">${total} נפשות</span>
+    <div class="food-total-banner">
+      <span class="ft-label">👥 סה״כ מגיעים</span>
+      <span class="ft-value">${total} נפשות</span>
     </div>
     ${items.map(it => `
       <div class="food-item">
@@ -3685,7 +3730,7 @@ function renderFood(items) {
          </div>`
       : '';
     const emptyMeal = mealItems.length === 0
-      ? `<div style="padding:10px 0 4px;text-align:center">
+      ? `<div class="food-meal-empty">
            <button class="btn btn-sm btn-outline" style="font-size:12px" onclick="openAddFood('${esc(meal)}')">+ הוסף מנה ל${esc(meal)}</button>
          </div>`
       : '';
@@ -4087,7 +4132,7 @@ function renderGuests(guests, permanentGuests) {
     ...(permanentGuests||[]).map(g => ({ ...g, _perm: true }))
   ];
   if (!allItems.length) {
-    card.innerHTML = '<div class="empty" style="padding:16px 0"><p>אין אורחים חיצוניים לאירוע זה</p></div>';
+    card.innerHTML = '<div class="state-empty"><div class="se-icon">👤</div><div class="se-title">אין אורחים חיצוניים לאירוע זה</div></div>';
     return;
   }
   const MEAL_ORDER = ['ליל שבת','סעודת שבת','סעודה שלישית','ליל חג','סעודת חג'];
