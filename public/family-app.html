@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>משפחת כרמיאל 🏠</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #FAF7F2;
+    --warm-white: #FFFDF9;
+    --brown: #6B4C35;
+    --brown-light: #8B6550;
+    --brown-pale: #E8DDD4;
+    --brown-bg: #F2EBE3;
+    --olive: #7A8C5C;
+    --olive-light: #A8B87E;
+    --olive-bg: #EEF2E6;
+    --gold: #C49A3C;
+    --gold-light: #E8C876;
+    --gold-bg: #FBF4E3;
+    --terracotta: #C4614A;
+    --terracotta-bg: #FBF0ED;
+    --blue: #4A7C9E;
+    --blue-bg: #EAF2F8;
+    --text: #2C1A0E;
+    --text-mid: #5C3D28;
+    --text-muted: #9B7B65;
+    --border: #DDD0C4;
+    --shadow: 0 2px 16px rgba(107,76,53,0.10);
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Heebo', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    direction: rtl;
+    min-height: 100vh;
+  }
+
+  /* ===== APP SHELL ===== */
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ===== HEADER ===== */
+  .header {
+    background: var(--warm-white);
+    border-bottom: 1.5px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-logo { display: flex; align-items: center; gap: 10px; }
+  .header-logo .icon { font-size: 26px; }
+  .header-logo h1 { font-size: 20px; font-weight: 700; color: var(--brown); }
+  .header-logo span { font-size: 13px; color: var(--text-muted); font-weight: 400; }
+  .header-actions { display: flex; align-items: center; gap: 10px; }
+  .user-chip {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--brown-bg); border-radius: 99px;
+    padding: 6px 14px 6px 8px; cursor: pointer; border: none;
+    font-family: 'Heebo', sans-serif; font-size: 13px; color: var(--brown);
+    font-weight: 500;
+  }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; color: white;
+    flex-shrink: 0;
+  }
+
+  /* ===== NAV ===== */
+  .nav {
+    background: var(--warm-white);
+    border-bottom: 1.5px solid var(--border);
+    display: flex; gap: 4px; padding: 0 20px;
+    overflow-x: auto;
+  }
+  .nav-btn {
+    padding: 14px 16px; font-size: 14px; font-weight: 500;
+    color: var(--text-muted); border: none; background: none;
+    cursor: pointer; border-bottom: 2.5px solid transparent;
+    font-family: 'Heebo', sans-serif; white-space: nowrap;
+    transition: all 0.18s;
+  }
+  .nav-btn:hover { color: var(--brown); }
+  .nav-btn.active { color: var(--brown); border-bottom-color: var(--brown); }
+
+  /* ===== MAIN ===== */
+  .main { flex: 1; padding: 24px; max-width: 960px; margin: 0 auto; width: 100%; }
+
+  /* ===== PAGES ===== */
+  .page { display: none; animation: fadeIn 0.2s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: var(--warm-white);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+  .card + .card { margin-top: 16px; }
+  .card-title {
+    font-size: 15px; font-weight: 700; color: var(--brown);
+    margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+  }
+
+  /* ===== GRID ===== */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  @media (max-width: 640px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .main { padding: 14px; }
+  }
+
+  /* ===== STAT CHIPS ===== */
+  .stat-chip {
+    background: var(--brown-bg); border-radius: var(--radius);
+    padding: 16px 20px; text-align: center;
+  }
+  .stat-chip .num { font-size: 28px; font-weight: 800; color: var(--brown); }
+  .stat-chip .lbl { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ===== BADGE ===== */
+  .badge {
+    display: inline-flex; align-items: center;
+    font-size: 12px; font-weight: 600; padding: 3px 10px;
+    border-radius: 99px;
+  }
+  .badge-green { background: var(--olive-bg); color: var(--olive); }
+  .badge-amber { background: var(--gold-bg); color: var(--gold); }
+  .badge-red { background: var(--terracotta-bg); color: var(--terracotta); }
+  .badge-blue { background: var(--blue-bg); color: var(--blue); }
+  .badge-brown { background: var(--brown-bg); color: var(--brown); }
+
+  /* ===== BUTTONS ===== */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'Heebo', sans-serif; font-size: 14px; font-weight: 600;
+    padding: 10px 20px; border-radius: var(--radius-sm);
+    cursor: pointer; border: none; transition: all 0.15s;
+  }
+  .btn-primary { background: var(--brown); color: white; }
+  .btn-primary:hover { background: var(--brown-light); }
+  .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text-mid); }
+  .btn-outline:hover { background: var(--brown-bg); }
+  .btn-sm { padding: 6px 14px; font-size: 13px; border-radius: 8px; }
+  .btn-green { background: var(--olive); color: white; }
+  .btn-green:hover { background: var(--olive-light); }
+
+  /* ===== FORM ===== */
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--text-mid); margin-bottom: 5px; display: block; }
+  .form-input, .form-select {
+    width: 100%; padding: 10px 14px; border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); font-family: 'Heebo', sans-serif;
+    font-size: 14px; color: var(--text); background: var(--warm-white);
+    outline: none; transition: border 0.15s;
+    direction: rtl;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--brown-light); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media(max-width:480px){ .form-row { grid-template-columns: 1fr; } }
+
+  /* ===== SECTION HEADER ===== */
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .section-title { font-size: 18px; font-weight: 700; color: var(--brown); }
+
+  /* ===== CALENDAR ===== */
+  .cal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .cal-nav { display: flex; gap: 8px; }
+  .cal-nav button {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1.5px solid var(--border); background: var(--warm-white);
+    cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .cal-nav button:hover { background: var(--brown-bg); }
+  .cal-grid {
+    display: grid; grid-template-columns: repeat(7,1fr);
+    gap: 4px; text-align: center;
+  }
+  .cal-day-name { font-size: 12px; font-weight: 600; color: var(--text-muted); padding: 4px 0 8px; }
+  .cal-day {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; border-radius: 8px; cursor: pointer;
+    position: relative; flex-direction: column; gap: 2px;
+    transition: background 0.12s;
+  }
+  .cal-day:hover:not(.empty) { background: var(--brown-bg); }
+  .cal-day.today { background: var(--brown); color: white; font-weight: 700; }
+  .cal-day.has-event::after {
+    content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
+    width: 5px; height: 5px; border-radius: 50%; background: var(--gold);
+  }
+  .cal-day.today.has-event::after { background: white; }
+  .cal-day.has-booking { background: var(--olive-bg); color: var(--olive); font-weight: 600; }
+  .cal-day.has-bday::before {
+    content: ''; position: absolute; top: 3px; right: 3px;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--terracotta);
+  }
+  .cal-day.shabbat { color: var(--gold); }
+  .cal-day.empty { cursor: default; }
+  .cal-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; }
+  .cal-legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-muted); }
+  .cal-legend-dot { width: 9px; height: 9px; border-radius: 50%; }
+
+  /* ===== ROOM CARD ===== */
+  .room-card {
+    background: var(--warm-white); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 16px; cursor: pointer;
+    transition: all 0.15s; position: relative;
+  }
+  .room-card:hover { border-color: var(--brown-light); box-shadow: var(--shadow); }
+  .room-card.booked { border-color: var(--olive-light); background: var(--olive-bg); }
+  .room-card.locked { border-color: var(--gold); background: var(--gold-bg); }
+  .room-card-icon { font-size: 28px; margin-bottom: 8px; }
+  .room-card-name { font-size: 15px; font-weight: 700; color: var(--brown); }
+  .room-card-cap { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+  .room-card-status { margin-top: 10px; }
+  .lock-btn {
+    position: absolute; top: 12px; left: 12px;
+    width: 28px; height: 28px; border-radius: 8px;
+    border: 1.5px solid var(--border); background: var(--warm-white);
+    cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .lock-btn:hover { background: var(--gold-bg); border-color: var(--gold); }
+  .lock-btn.locked { background: var(--gold); border-color: var(--gold); }
+
+  /* ===== FOOD SECTION ===== */
+  .food-cat { margin-bottom: 20px; }
+  .food-cat-title {
+    font-size: 14px; font-weight: 700; color: var(--brown);
+    margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+  }
+  .food-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; background: var(--warm-white);
+    border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+  }
+  .food-item-info { display: flex; align-items: center; gap: 10px; }
+  .food-item-name { font-size: 14px; font-weight: 500; }
+  .food-item-who { font-size: 12px; color: var(--text-muted); }
+  .food-item-actions { display: flex; gap: 6px; }
+
+  /* ===== FAMILY MEMBERS ===== */
+  .family-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--brown-pale);
+  }
+  .family-row:last-child { border-bottom: none; }
+  .family-info { flex: 1; }
+  .family-name { font-size: 14px; font-weight: 600; }
+  .family-details { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ===== NOTIFICATIONS ===== */
+  .notif-item {
+    display: flex; gap: 12px; padding: 12px;
+    background: var(--warm-white); border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); margin-bottom: 8px;
+  }
+  .notif-icon { font-size: 22px; flex-shrink: 0; }
+  .notif-text { font-size: 13px; color: var(--text-mid); line-height: 1.5; }
+  .notif-time { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+  /* ===== BIRTHDAYS ===== */
+  .bday-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--brown-pale);
+  }
+  .bday-item:last-child { border-bottom: none; }
+  .bday-date {
+    width: 48px; text-align: center; flex-shrink: 0;
+    background: var(--terracotta-bg); border-radius: var(--radius-sm);
+    padding: 6px 4px;
+  }
+  .bday-date .day { font-size: 18px; font-weight: 800; color: var(--terracotta); }
+  .bday-date .month { font-size: 11px; color: var(--terracotta); font-weight: 600; }
+  .bday-soon { color: var(--terracotta); font-weight: 700; }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(44,26,14,0.45);
+    z-index: 200; display: none; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--warm-white); border-radius: var(--radius);
+    padding: 28px; width: 100%; max-width: 480px;
+    box-shadow: 0 8px 40px rgba(107,76,53,0.2);
+    animation: slideUp 0.2s ease;
+    max-height: 90vh; overflow-y: auto;
+  }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .modal-title { font-size: 18px; font-weight: 700; color: var(--brown); margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+  /* ===== TOAST ===== */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--text); color: white; padding: 12px 22px;
+    border-radius: 99px; font-size: 14px; font-weight: 500;
+    z-index: 300; opacity: 0; transition: opacity 0.2s;
+    pointer-events: none; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ===== TABS ===== */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; background: var(--brown-bg); border-radius: var(--radius-sm); padding: 4px; }
+  .tab-btn {
+    flex: 1; padding: 8px; font-size: 13px; font-weight: 600;
+    border: none; background: transparent; border-radius: 8px;
+    cursor: pointer; font-family: 'Heebo', sans-serif; color: var(--text-muted);
+    transition: all 0.15s;
+  }
+  .tab-btn.active { background: var(--warm-white); color: var(--brown); box-shadow: 0 1px 4px rgba(107,76,53,0.12); }
+
+  /* ===== DIVIDER ===== */
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* ===== EMPTY STATE ===== */
+  .empty { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+  .empty .emoji { font-size: 40px; margin-bottom: 10px; }
+  .empty p { font-size: 14px; }
+
+  /* ===== CHECKLIST ===== */
+  .check-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+  .check-item input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--brown); cursor: pointer; flex-shrink: 0; }
+  .check-item label { font-size: 14px; cursor: pointer; flex: 1; }
+  .check-item label.done { text-decoration: line-through; color: var(--text-muted); }
+
+  /* special-needs chips */
+  .needs-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 12px; padding: 4px 10px; border-radius: 99px;
+    background: var(--blue-bg); color: var(--blue); font-weight: 500;
+    margin: 2px;
+  }
+
+  .upcoming-event {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px; background: var(--gold-bg);
+    border: 1.5px solid var(--gold-light); border-radius: var(--radius);
+    margin-bottom: 12px;
+  }
+  .upcoming-event .event-date {
+    text-align: center; min-width: 52px;
+    background: var(--gold); border-radius: var(--radius-sm);
+    padding: 8px 6px; color: white;
+  }
+  .upcoming-event .event-date .day { font-size: 22px; font-weight: 800; }
+  .upcoming-event .event-date .month { font-size: 11px; font-weight: 600; }
+  .upcoming-event .event-info h3 { font-size: 15px; font-weight: 700; }
+  .upcoming-event .event-info p { font-size: 12px; color: var(--text-mid); margin-top: 3px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-logo">
+    <span class="icon">🏡</span>
+    <div>
+      <h1>משפחת שטיינברג</h1>
+      <span>כרמיאל</span>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="user-chip" onclick="openModal('modal-login')">
+      <div class="avatar" style="background:#6B4C35">דו</div>
+      דוד ורחל
+    </button>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('home',this)">🏠 ראשי</button>
+  <button class="nav-btn" onclick="showPage('calendar',this)">📅 לוח שנה</button>
+  <button class="nav-btn" onclick="showPage('rooms',this)">🛏 חדרים</button>
+  <button class="nav-btn" onclick="showPage('food',this)">🍽 סעודות</button>
+  <button class="nav-btn" onclick="showPage('family',this)">👨‍👩‍👧‍👦 משפחה</button>
+  <button class="nav-btn" onclick="showPage('birthdays',this)">🎂 ימי הולדת</button>
+  <button class="nav-btn" onclick="showPage('notifications',this)">🔔 התראות</button>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- ===== HOME ===== -->
+  <div class="page active" id="page-home">
+    <div class="section-header">
+      <div class="section-title">שלום, דוד ורחל! 👋</div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('modal-new-event')">+ שבת / חג חדש</button>
+    </div>
+
+    <!-- next event -->
+    <div class="upcoming-event">
+      <div class="event-date"><div class="day">14</div><div class="month">יוני</div></div>
+      <div class="event-info">
+        <h3>שבת פרשת בהעלותך</h3>
+        <p>כניסה 19:42 · 4 חדרים · 18 אורחים</p>
+      </div>
+      <div style="margin-right:auto">
+        <span class="badge badge-green">3 חדרים תפוסים</span>
+      </div>
+    </div>
+
+    <!-- stats -->
+    <div class="grid-3" style="margin-bottom:16px">
+      <div class="stat-chip">
+        <div class="num">4</div>
+        <div class="lbl">חדרים זמינים</div>
+      </div>
+      <div class="stat-chip" style="background:var(--olive-bg)">
+        <div class="num" style="color:var(--olive)">3</div>
+        <div class="lbl">חדרים תפוסים</div>
+      </div>
+      <div class="stat-chip" style="background:var(--gold-bg)">
+        <div class="num" style="color:var(--gold)">18</div>
+        <div class="lbl">אורחים סה"כ</div>
+      </div>
+    </div>
+
+    <!-- birthday alert -->
+    <div class="card" style="border-color:var(--terracotta);background:var(--terracotta-bg)">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:28px">🎂</span>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--terracotta)">יום הולדת מתקרב!</div>
+          <div style="font-size:13px;color:var(--text-mid);margin-top:3px">יונתן בן אהרן — יום הולדת ה-35 בעוד 5 ימים (18 ביוני)</div>
+        </div>
+        <button class="btn btn-sm" style="background:var(--terracotta);color:white;margin-right:auto;border:none">אחל מזל טוב 🎉</button>
+      </div>
+    </div>
+
+    <!-- upcoming shabbatot -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">📅 שבתות וחגים קרובים</div>
+      <div id="upcoming-list">
+        <div class="family-row">
+          <div class="bday-date" style="background:var(--gold-bg)">
+            <div class="day" style="color:var(--gold)">14</div>
+            <div class="month" style="color:var(--gold)">יוני</div>
+          </div>
+          <div class="family-info">
+            <div class="family-name">שבת פרשת בהעלותך</div>
+            <div class="family-details">3 חדרים תפוסים · 1 פנוי</div>
+          </div>
+          <span class="badge badge-amber">שבת</span>
+        </div>
+        <div class="family-row">
+          <div class="bday-date" style="background:var(--gold-bg)">
+            <div class="day" style="color:var(--gold)">21</div>
+            <div class="month" style="color:var(--gold)">יוני</div>
+          </div>
+          <div class="family-info">
+            <div class="family-name">שבת פרשת שלח</div>
+            <div class="family-details">0 חדרים תפוסים · 4 פנויים</div>
+          </div>
+          <span class="badge badge-green">פנוי</span>
+        </div>
+        <div class="family-row">
+          <div class="bday-date" style="background:var(--terracotta-bg)">
+            <div class="day" style="color:var(--terracotta)">1</div>
+            <div class="month" style="color:var(--terracotta)">אוק׳</div>
+          </div>
+          <div class="family-info">
+            <div class="family-name">ראש השנה תשפ״ו</div>
+            <div class="family-details">4 חדרים תפוסים</div>
+          </div>
+          <span class="badge badge-red">חג</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- quick food summary -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">🍽 מה עוד חסר לשבת הקרובה?</div>
+      <div class="check-item"><input type="checkbox" id="c1"><label for="c1">קינוח — אף אחד לא נרשם עדיין</label></div>
+      <div class="check-item"><input type="checkbox" id="c2" checked><label for="c2" class="done">מנה ראשונה — דוד ורחל</label></div>
+      <div class="check-item"><input type="checkbox" id="c3" checked><label for="c3" class="done">עיקרית — משפחת יונתן</label></div>
+      <div class="check-item"><input type="checkbox" id="c4"><label for="c4">שתייה — פנוי</label></div>
+    </div>
+  </div>
+
+  <!-- ===== CALENDAR ===== -->
+  <div class="page" id="page-calendar">
+    <div class="section-header">
+      <div class="section-title">לוח שנה</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="tabs" style="margin-bottom:0">
+          <button class="tab-btn active" id="tab-greg" onclick="switchCal('greg',this)">לועזי</button>
+          <button class="tab-btn" id="tab-heb" onclick="switchCal('heb',this)">עברי</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cal-header">
+        <div class="cal-nav">
+          <button onclick="changeMonth(-1)">&#x2192;</button>
+          <button onclick="changeMonth(1)">&#x2190;</button>
+        </div>
+        <div style="font-size:17px;font-weight:700;color:var(--brown)" id="cal-title"></div>
+        <button class="btn btn-sm btn-outline" onclick="goToday()">היום</button>
+      </div>
+      <div class="cal-grid" id="cal-days-header">
+        <div class="cal-day-name">א׳</div>
+        <div class="cal-day-name">ב׳</div>
+        <div class="cal-day-name">ג׳</div>
+        <div class="cal-day-name">ד׳</div>
+        <div class="cal-day-name">ה׳</div>
+        <div class="cal-day-name">ו׳</div>
+        <div class="cal-day-name">ש׳</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-legend" style="margin-top:14px">
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--brown)"></div>היום</div>
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--olive)"></div>הזמנה</div>
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--gold)"></div>שבת/חג</div>
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--terracotta)"></div>יום הולדת</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">📋 אירועי החודש</div>
+      <div class="family-row">
+        <div class="bday-date" style="background:var(--gold-bg)"><div class="day" style="color:var(--gold)">14</div><div class="month" style="color:var(--gold)">יוני</div></div>
+        <div class="family-info"><div class="family-name">שבת פרשת בהעלותך</div><div class="family-details">משפחת יונתן · משפחת שרה · משפחת מרים</div></div>
+        <span class="badge badge-amber">שבת</span>
+      </div>
+      <div class="family-row">
+        <div class="bday-date" style="background:var(--terracotta-bg)"><div class="day" style="color:var(--terracotta)">18</div><div class="month" style="color:var(--terracotta)">יוני</div></div>
+        <div class="family-info"><div class="family-name">יום הולדת יונתן</div><div class="family-details">35 שנים 🎂</div></div>
+        <span class="badge badge-red">יום הולדת</span>
+      </div>
+      <div class="family-row">
+        <div class="bday-date" style="background:var(--gold-bg)"><div class="day" style="color:var(--gold)">21</div><div class="month" style="color:var(--gold)">יוני</div></div>
+        <div class="family-info"><div class="family-name">שבת פרשת שלח</div><div class="family-details">פנוי — אין הזמנות עדיין</div></div>
+        <span class="badge badge-green">פנוי</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ROOMS ===== -->
+  <div class="page" id="page-rooms">
+    <div class="section-header">
+      <div class="section-title">חדרים</div>
+      <div style="display:flex;gap:8px">
+        <select class="form-select" style="width:auto;padding:8px 12px" id="room-event-select">
+          <option>שבת 14 יוני</option>
+          <option>שבת 21 יוני</option>
+          <option>ראש השנה 1 אוק׳</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid-2" id="rooms-grid">
+      <!-- rooms rendered by JS -->
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">🧾 סיכום הזמנות — שבת 14 יוני</div>
+      <div class="family-row">
+        <div class="avatar" style="background:#7A8C5C">יר</div>
+        <div class="family-info">
+          <div class="family-name">חדר ישראל — משפחת יונתן ורות</div>
+          <div class="family-details">2 מבוגרים · 1 תינוק · צריכים עריסת תינוק</div>
+        </div>
+        <span class="badge badge-green">מאושר</span>
+      </div>
+      <div class="family-row">
+        <div class="avatar" style="background:#C49A3C">יח</div>
+        <div class="family-info">
+          <div class="family-name">היחידה — משפחת שמעון ולאה</div>
+          <div class="family-details">2 מבוגרים · 2 ילדים · אמבטיית תינוק</div>
+        </div>
+        <span class="badge badge-green">מאושר</span>
+      </div>
+      <div class="family-row">
+        <div class="avatar" style="background:#C4614A">פנ</div>
+        <div class="family-info">
+          <div class="family-name">חדר פנינה — 3 ילדים ממשפחת שרה</div>
+          <div class="family-details">3 מבוגרים צעירים</div>
+        </div>
+        <span class="badge badge-green">מאושר</span>
+      </div>
+      <div class="family-row">
+        <div class="avatar" style="background:#D3D1C7;color:#444">יה</div>
+        <div class="family-info">
+          <div class="family-name">חדר יהודה — פנוי</div>
+          <div class="family-details">לא נרשם עדיין</div>
+        </div>
+        <span class="badge badge-amber">פנוי</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FOOD ===== -->
+  <div class="page" id="page-food">
+    <div class="section-header">
+      <div class="section-title">סעודות</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select class="form-select" style="width:auto;padding:8px 12px">
+          <option>שבת 14 יוני</option>
+          <option>שבת 21 יוני</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-food')">+ הוסף</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="food-cat">
+        <div class="food-cat-title">🥗 מנה ראשונה</div>
+        <div class="food-item">
+          <div class="food-item-info">
+            <div class="avatar" style="background:#6B4C35;width:30px;height:30px;font-size:12px">דר</div>
+            <div><div class="food-item-name">סלט ירקות + חצילים שרופים</div><div class="food-item-who">משפחת דוד ורחל</div></div>
+          </div>
+          <span class="badge badge-green">✓ מאושר</span>
+        </div>
+      </div>
+      <div class="food-cat">
+        <div class="food-cat-title">🍖 מנה עיקרית</div>
+        <div class="food-item">
+          <div class="food-item-info">
+            <div class="avatar" style="background:#7A8C5C;width:30px;height:30px;font-size:12px">יר</div>
+            <div><div class="food-item-name">צלי בקר עם ירקות</div><div class="food-item-who">משפחת יונתן ורות</div></div>
+          </div>
+          <span class="badge badge-green">✓ מאושר</span>
+        </div>
+        <div class="food-item">
+          <div class="food-item-info">
+            <div class="avatar" style="background:#C49A3C;width:30px;height:30px;font-size:12px">של</div>
+            <div><div class="food-item-name">עוף בתנור</div><div class="food-item-who">משפחת שמעון ולאה</div></div>
+          </div>
+          <span class="badge badge-green">✓ מאושר</span>
+        </div>
+      </div>
+      <div class="food-cat">
+        <div class="food-cat-title">🍰 קינוח</div>
+        <div style="background:var(--terracotta-bg);border:1.5px dashed var(--terracotta);border-radius:var(--radius-sm);padding:14px;text-align:center;color:var(--terracotta);font-size:13px;font-weight:600">
+          🙋 קינוח עדיין לא נלקח! מי מתנדב?
+          <br><button class="btn btn-sm" style="margin-top:10px;background:var(--terracotta);color:white;border:none" onclick="openModal('modal-add-food')">אני מביא!</button>
+        </div>
+      </div>
+      <div class="food-cat">
+        <div class="food-cat-title">🥤 שתייה</div>
+        <div style="background:var(--terracotta-bg);border:1.5px dashed var(--terracotta);border-radius:var(--radius-sm);padding:14px;text-align:center;color:var(--terracotta);font-size:13px;font-weight:600">
+          🙋 שתייה עדיין לא נלקחה!
+          <br><button class="btn btn-sm" style="margin-top:10px;background:var(--terracotta);color:white;border:none" onclick="openModal('modal-add-food')">אני מביא!</button>
+        </div>
+      </div>
+      <div class="food-cat">
+        <div class="food-cat-title">🍞 לחם / חלות</div>
+        <div class="food-item">
+          <div class="food-item-info">
+            <div class="avatar" style="background:#4A7C9E;width:30px;height:30px;font-size:12px">שמ</div>
+            <div><div class="food-item-name">4 חלות שבת</div><div class="food-item-who">משפחת שרה ומיכאל</div></div>
+          </div>
+          <span class="badge badge-green">✓ מאושר</span>
+        </div>
+      </div>
+      <div class="food-cat" style="margin-bottom:0">
+        <div class="food-cat-title">🍬 ממתקים / פירות</div>
+        <div class="food-item">
+          <div class="food-item-info">
+            <div class="avatar" style="background:#C4614A;width:30px;height:30px;font-size:12px">מר</div>
+            <div><div class="food-item-name">סלט פירות + ענבים</div><div class="food-item-who">משפחת מרים ואלי</div></div>
+          </div>
+          <span class="badge badge-amber">בהכנה</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FAMILY ===== -->
+  <div class="page" id="page-family">
+    <div class="section-header">
+      <div class="section-title">המשפחה</div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-family')">+ הוסף משפחה</button>
+    </div>
+
+    <div class="card">
+      <!-- parents -->
+      <div class="family-row">
+        <div class="avatar" style="background:#6B4C35;width:42px;height:42px;font-size:15px">הו</div>
+        <div class="family-info">
+          <div class="family-name">אבא ואמא — בעלי הבית 👑</div>
+          <div class="family-details">כרמיאל · מנהלי האפליקציה</div>
+        </div>
+        <span class="badge badge-brown">בית</span>
+      </div>
+      <div class="divider"></div>
+      <!-- children -->
+      <div class="family-row">
+        <div class="avatar" style="background:#7A8C5C;width:42px;height:42px;font-size:14px">יר</div>
+        <div class="family-info">
+          <div class="family-name">יונתן ורות</div>
+          <div class="family-details">2 מבוגרים · 1 תינוק (6 חודשים)</div>
+          <div style="margin-top:5px"><span class="needs-chip">🛏 עריסת תינוק</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+          <span class="badge badge-green">נשוי</span>
+          <button class="btn btn-sm btn-outline" onclick="openModal('modal-edit-family')">עריכה</button>
+        </div>
+      </div>
+      <div class="family-row">
+        <div class="avatar" style="background:#C49A3C;width:42px;height:42px;font-size:14px">של</div>
+        <div class="family-info">
+          <div class="family-name">שמעון ולאה</div>
+          <div class="family-details">2 מבוגרים · 2 ילדים קטנים</div>
+          <div style="margin-top:5px"><span class="needs-chip">🛁 אמבטיית תינוק</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+          <span class="badge badge-green">נשוי</span>
+          <button class="btn btn-sm btn-outline" onclick="openModal('modal-edit-family')">עריכה</button>
+        </div>
+      </div>
+      <div class="family-row">
+        <div class="avatar" style="background:#C4614A;width:42px;height:42px;font-size:14px">שמ</div>
+        <div class="family-info">
+          <div class="family-name">שרה ומיכאל</div>
+          <div class="family-details">2 מבוגרים · 3 ילדים</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+          <span class="badge badge-green">נשוי</span>
+          <button class="btn btn-sm btn-outline" onclick="openModal('modal-edit-family')">עריכה</button>
+        </div>
+      </div>
+      <div class="family-row">
+        <div class="avatar" style="background:#4A7C9E;width:42px;height:42px;font-size:14px">מא</div>
+        <div class="family-info">
+          <div class="family-name">מרים ואלי</div>
+          <div class="family-details">2 מבוגרים · 1 תינוק</div>
+          <div style="margin-top:5px"><span class="needs-chip">🛏 עריסת תינוק</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+          <span class="badge badge-green">נשוי</span>
+          <button class="btn btn-sm btn-outline" onclick="openModal('modal-edit-family')">עריכה</button>
+        </div>
+      </div>
+      <div class="family-row">
+        <div class="avatar" style="background:#8B6550;width:42px;height:42px;font-size:14px">דנ</div>
+        <div class="family-info">
+          <div class="family-name">דינה ונחום</div>
+          <div class="family-details">2 מבוגרים</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+          <span class="badge badge-green">נשוי</span>
+          <button class="btn btn-sm btn-outline">עריכה</button>
+        </div>
+      </div>
+      <div class="family-row">
+        <div class="avatar" style="background:#FAEEDA;color:#854F0B;width:42px;height:42px;font-size:14px">אה</div>
+        <div class="family-info">
+          <div class="family-name">אהרן</div>
+          <div class="family-details">מאורס</div>
+        </div>
+        <span class="badge badge-amber">מאורס</span>
+      </div>
+      <div class="family-row">
+        <div class="avatar" style="background:#EEEDFE;color:#3C3489;width:42px;height:42px;font-size:14px">בנ</div>
+        <div class="family-info">
+          <div class="family-name">בנימין</div>
+          <div class="family-details">בישיבה</div>
+        </div>
+        <span class="badge badge-blue">ישיבה</span>
+      </div>
+      <div class="family-row" style="border-bottom:none">
+        <div class="avatar" style="background:#F1EFE8;color:#444441;width:42px;height:42px;font-size:14px">רב</div>
+        <div class="family-info">
+          <div class="family-name">רבקה</div>
+          <div class="family-details">תלמידת תיכון · גרה בבית</div>
+        </div>
+        <span class="badge badge-brown">תיכון</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BIRTHDAYS ===== -->
+  <div class="page" id="page-birthdays">
+    <div class="section-header">
+      <div class="section-title">ימי הולדת</div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-bday')">+ הוסף</button>
+    </div>
+
+    <div class="card" style="background:var(--terracotta-bg);border-color:var(--terracotta);margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:32px">🎂</span>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--terracotta)">בעוד 5 ימים!</div>
+          <div style="font-size:14px;color:var(--text-mid)">יונתן — יום הולדת ה-35, 18 ביוני</div>
+        </div>
+        <button class="btn btn-sm" style="background:var(--terracotta);color:white;border:none;margin-right:auto">🎉 אחל מזל טוב</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📅 כל ימי ההולדת</div>
+
+      <div class="tabs">
+        <button class="tab-btn active">לועזי</button>
+        <button class="tab-btn">עברי</button>
+      </div>
+
+      <div class="bday-item">
+        <div class="bday-date"><div class="day" style="color:var(--terracotta)">18</div><div class="month" style="color:var(--terracotta)">יוני</div></div>
+        <div class="avatar" style="background:#7A8C5C">יר</div>
+        <div class="family-info">
+          <div class="family-name bday-soon">יונתן — 35 🎂</div>
+          <div class="family-details">בעוד 5 ימים</div>
+        </div>
+        <span class="badge badge-red">קרוב!</span>
+      </div>
+      <div class="bday-item">
+        <div class="bday-date"><div class="day" style="color:var(--terracotta)">3</div><div class="month" style="color:var(--terracotta)">יולי</div></div>
+        <div class="avatar" style="background:#C49A3C">של</div>
+        <div class="family-info">
+          <div class="family-name">לאה — 29</div>
+          <div class="family-details">בעוד 20 ימים</div>
+        </div>
+        <span class="badge badge-amber">בקרוב</span>
+      </div>
+      <div class="bday-item">
+        <div class="bday-date"><div class="day" style="color:var(--text-muted)">15</div><div class="month" style="color:var(--text-muted)">אוג׳</div></div>
+        <div class="avatar" style="background:#C4614A">שמ</div>
+        <div class="family-info">
+          <div class="family-name">מיכאל — 37</div>
+          <div class="family-details">בעוד 63 ימים</div>
+        </div>
+        <span class="badge badge-brown">אוג׳</span>
+      </div>
+      <div class="bday-item">
+        <div class="bday-date"><div class="day" style="color:var(--text-muted)">22</div><div class="month" style="color:var(--text-muted)">ספט׳</div></div>
+        <div class="avatar" style="background:#4A7C9E">מא</div>
+        <div class="family-info">
+          <div class="family-name">מרים — 31</div>
+          <div class="family-details">בעוד 101 ימים</div>
+        </div>
+        <span class="badge badge-blue">ספט׳</span>
+      </div>
+      <div class="bday-item">
+        <div class="bday-date"><div class="day" style="color:var(--text-muted)">7</div><div class="month" style="color:var(--text-muted)">נוב׳</div></div>
+        <div class="avatar" style="background:#8B6550">דנ</div>
+        <div class="family-info">
+          <div class="family-name">דינה — 28</div>
+          <div class="family-details">בעוד 147 ימים</div>
+        </div>
+        <span class="badge badge-brown">נוב׳</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== NOTIFICATIONS ===== -->
+  <div class="page" id="page-notifications">
+    <div class="section-header">
+      <div class="section-title">התראות ודוחות</div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">⚙️ הגדרות התראות</div>
+      <div class="check-item">
+        <input type="checkbox" id="n1" checked>
+        <label for="n1">יום שלישי — תזכורת לחדרים פנויים (לכולם)</label>
+      </div>
+      <div class="check-item">
+        <input type="checkbox" id="n2" checked>
+        <label for="n2">יום רביעי — דוח מסכם לאמא</label>
+      </div>
+      <div class="check-item">
+        <input type="checkbox" id="n3" checked>
+        <label for="n3">התראת יום הולדת — שבוע לפני</label>
+      </div>
+      <div class="check-item">
+        <input type="checkbox" id="n4">
+        <label for="n4">WhatsApp (יתווסף בהמשך)</label>
+      </div>
+      <div class="check-item">
+        <input type="checkbox" id="n5">
+        <label for="n5">אימייל (יתווסף בהמשך)</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔔 התראות אחרונות</div>
+      <div class="notif-item">
+        <div class="notif-icon">🏡</div>
+        <div>
+          <div class="notif-text"><strong>תזכורת שבת:</strong> חדר יהודה עדיין פנוי לשבת 14 יוני. מי מעוניין?</div>
+          <div class="notif-time">שלישי, 10 יוני · 09:00</div>
+        </div>
+      </div>
+      <div class="notif-item">
+        <div class="notif-icon">🍰</div>
+        <div>
+          <div class="notif-text"><strong>סעודות:</strong> קינוח ושתייה לשבת 14 יוני עדיין לא נרשמו. מי מתנדב?</div>
+          <div class="notif-time">שלישי, 10 יוני · 09:00</div>
+        </div>
+      </div>
+      <div class="notif-item" style="background:var(--terracotta-bg);border-color:var(--terracotta)">
+        <div class="notif-icon">🎂</div>
+        <div>
+          <div class="notif-text" style="color:var(--terracotta)"><strong>יום הולדת:</strong> יונתן חוגג 35 בעוד שבוע (18 יוני)! אל תשכחו לאחל 🎉</div>
+          <div class="notif-time">שני, 11 יוני · 08:00</div>
+        </div>
+      </div>
+      <div class="notif-item" style="background:var(--olive-bg);border-color:var(--olive-light)">
+        <div class="notif-icon">📋</div>
+        <div>
+          <div class="notif-text" style="color:var(--olive)"><strong>דוח שבועי לאמא:</strong> שבת 14/6 — 3 חדרים תפוסים, 1 פנוי, חסר קינוח ושתייה.</div>
+          <div class="notif-time">רביעי, 5 יוני · 07:00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- Login / Switch User -->
+<div class="modal-overlay" id="modal-login">
+  <div class="modal">
+    <div class="modal-title">👤 כניסה / החלפת משתמש</div>
+    <div class="form-group">
+      <label class="form-label">בחר משפחה</label>
+      <select class="form-select">
+        <option>דוד ורחל (הורים)</option>
+        <option>יונתן ורות</option>
+        <option>שמעון ולאה</option>
+        <option>שרה ומיכאל</option>
+        <option>מרים ואלי</option>
+        <option>דינה ונחום</option>
+        <option>אהרן</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-login')">ביטול</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-login');showToast('התחברת בהצלחה! 👋')">כניסה</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Event -->
+<div class="modal-overlay" id="modal-new-event">
+  <div class="modal">
+    <div class="modal-title">📅 שבת / חג חדש</div>
+    <div class="form-group">
+      <label class="form-label">שם האירוע</label>
+      <input class="form-input" placeholder="לדוגמה: שבת פרשת בהעלותך">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">תאריך כניסה</label>
+        <input class="form-input" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">סוג</label>
+        <select class="form-select">
+          <option>שבת</option>
+          <option>חג</option>
+          <option>אירוע משפחתי</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-new-event')">ביטול</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-new-event');showToast('האירוע נוסף! 📅')">הוסף אירוע</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Food -->
+<div class="modal-overlay" id="modal-add-food">
+  <div class="modal">
+    <div class="modal-title">🍽 הוספת מנה</div>
+    <div class="form-group">
+      <label class="form-label">קטגוריה</label>
+      <select class="form-select">
+        <option>מנה ראשונה</option>
+        <option>מנה עיקרית</option>
+        <option>קינוח</option>
+        <option>שתייה</option>
+        <option>לחם / חלות</option>
+        <option>ממתקים / פירות</option>
+        <option>אחר</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">מה מביאים?</label>
+      <input class="form-input" placeholder="לדוגמה: עוגת שוקולד">
+    </div>
+    <div class="form-group">
+      <label class="form-label">הערות</label>
+      <input class="form-input" placeholder="ללא גלוטן, כשר חלב וכו׳">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-food')">ביטול</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-add-food');showToast('נרשמת! תודה 🙏')">אני מביא!</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Family -->
+<div class="modal-overlay" id="modal-add-family">
+  <div class="modal">
+    <div class="modal-title">👨‍👩‍👧 הוספת משפחה</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">שם הבעל</label>
+        <input class="form-input" placeholder="שם פרטי">
+      </div>
+      <div class="form-group">
+        <label class="form-label">שם האישה</label>
+        <input class="form-input" placeholder="שם פרטי">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">מספר מבוגרים</label>
+        <input class="form-input" type="number" value="2" min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">מספר ילדים</label>
+        <input class="form-input" type="number" value="0" min="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">סטטוס</label>
+      <select class="form-select">
+        <option>נשוי</option>
+        <option>מאורס</option>
+        <option>ישיבה</option>
+        <option>תיכון</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">צרכים מיוחדים</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px" id="needs-checkboxes">
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+          <input type="checkbox"> 🛏 עריסת תינוק
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+          <input type="checkbox"> 🛁 אמבטיית תינוק
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+          <input type="checkbox"> ♿ נגישות
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+          <input type="checkbox"> 🥛 ללא גלוטן
+        </label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-family')">ביטול</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-add-family');showToast('המשפחה נוספה! 👨‍👩‍👧')">הוסף משפחה</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Family -->
+<div class="modal-overlay" id="modal-edit-family">
+  <div class="modal">
+    <div class="modal-title">✏️ עריכת פרטי משפחה</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">שם הבעל</label>
+        <input class="form-input" value="יונתן">
+      </div>
+      <div class="form-group">
+        <label class="form-label">שם האישה</label>
+        <input class="form-input" value="רות">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">מבוגרים</label>
+        <input class="form-input" type="number" value="2">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ילדים</label>
+        <input class="form-input" type="number" value="1">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">צרכים מיוחדים</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+          <input type="checkbox" checked> 🛏 עריסת תינוק
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+          <input type="checkbox"> 🛁 אמבטיית תינוק
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+          <input type="checkbox"> ♿ נגישות
+        </label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-edit-family')">ביטול</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-edit-family');showToast('הפרטים עודכנו ✓')">שמור שינויים</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Birthday -->
+<div class="modal-overlay" id="modal-add-bday">
+  <div class="modal">
+    <div class="modal-title">🎂 הוספת יום הולדת</div>
+    <div class="form-group">
+      <label class="form-label">שם</label>
+      <select class="form-select">
+        <option>יונתן</option><option>רות</option><option>שמעון</option>
+        <option>לאה</option><option>שרה</option><option>מיכאל</option>
+        <option>מרים</option><option>אלי</option><option>דינה</option>
+        <option>נחום</option><option>אהרן</option><option>בנימין</option><option>רבקה</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">תאריך לועזי</label>
+        <input class="form-input" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">תאריך עברי (אופציונלי)</label>
+        <input class="form-input" placeholder="כ״ה סיוון">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-bday')">ביטול</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-add-bday');showToast('יום הולדת נוסף! 🎂')">הוסף</button>
+    </div>
+  </div>
+</div>
+
+<!-- Room Booking Modal -->
+<div class="modal-overlay" id="modal-book-room">
+  <div class="modal">
+    <div class="modal-title" id="modal-book-title">🛏 הזמנת חדר</div>
+    <div class="form-group">
+      <label class="form-label">אירוע</label>
+      <select class="form-select">
+        <option>שבת 14 יוני</option>
+        <option>שבת 21 יוני</option>
+        <option>ראש השנה 1 אוק׳</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">משפחה</label>
+      <select class="form-select">
+        <option>דוד ורחל</option><option>יונתן ורות</option>
+        <option>שמעון ולאה</option><option>שרה ומיכאל</option>
+        <option>מרים ואלי</option><option>דינה ונחום</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">מבוגרים</label>
+        <input class="form-input" type="number" value="2" min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ילדים</label>
+        <input class="form-input" type="number" value="0" min="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">צרכים מיוחדים</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox"> 🛏 עריסת תינוק</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox"> 🛁 אמבטיית תינוק</label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-book-room')">ביטול</button>
+      <button class="btn btn-primary" onclick="bookRoom()">הזמן חדר</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const rooms = [
+  { id:'penina', name:'חדר פנינה', icon:'🛏', cap:'4 מיטות בודדות', detail:'מתאים עד 4 אנשים', booked: true, bookedBy:'ילדי משפחת שרה', locked: false },
+  { id:'israel', name:'חדר ישראל', icon:'🛏', cap:'זוג או 2 בודדים', detail:'עם מיטה זוגית / שתי יחידות', booked: true, bookedBy:'יונתן ורות', locked: false },
+  { id:'yehuda', name:'חדר יהודה', icon:'🛏', cap:'זוג + תינוק', detail:'עריסה זמינה', booked: false, bookedBy:'', locked: false },
+  { id:'hayechida', name:'היחידה', icon:'🏠', cap:'זוג + תינוק', detail:'כניסה עצמאית', booked: true, bookedBy:'שמעון ולאה', locked: false },
+];
+
+function renderRooms() {
+  const grid = document.getElementById('rooms-grid');
+  grid.innerHTML = rooms.map(r => `
+    <div class="room-card ${r.booked?'booked':''} ${r.locked?'locked':''}" onclick="openBookRoom('${r.id}')">
+      <button class="lock-btn ${r.locked?'locked':''}" onclick="event.stopPropagation();toggleLock('${r.id}')" title="${r.locked?'שחרר נעילה':'נעל חדר'}">
+        ${r.locked?'🔒':'🔓'}
+      </button>
+      <div class="room-card-icon">${r.icon}</div>
+      <div class="room-card-name">${r.name}</div>
+      <div class="room-card-cap">${r.cap}</div>
+      <div class="room-card-cap" style="color:var(--text-muted);font-size:11px">${r.detail}</div>
+      <div class="room-card-status" style="margin-top:10px">
+        ${r.locked ? '<span class="badge badge-amber">🔒 נעול</span>' :
+          r.booked ? `<span class="badge badge-green">✓ ${r.bookedBy}</span>` :
+          '<span class="badge badge-red">פנוי</span>'}
+      </div>
+    </div>
+  `).join('');
+}
+renderRooms();
+
+function toggleLock(id) {
+  const r = rooms.find(x=>x.id===id);
+  r.locked = !r.locked;
+  renderRooms();
+  showToast(r.locked ? `${r.name} ננעל 🔒` : `${r.name} שוחרר 🔓`);
+}
+
+function openBookRoom(id) {
+  const r = rooms.find(x=>x.id===id);
+  document.getElementById('modal-book-title').textContent = '🛏 הזמנת ' + r.name;
+  openModal('modal-book-room');
+}
+
+function bookRoom() {
+  closeModal('modal-book-room');
+  showToast('החדר הוזמן בהצלחה! 🏡');
+}
+
+// Calendar
+let calDate = new Date(2025, 5, 1); // June 2025
+const hebrewMonths = ['תשרי','חשוון','כסלו','טבת','שבט','אדר','ניסן','אייר','סיוון','תמוז','אב','אלול'];
+const gregMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const shabbatDays = [7,14,21,28];
+const eventDays = [14,21];
+const bdayDays = [18];
+let calMode = 'greg';
+
+function renderCalendar() {
+  const title = document.getElementById('cal-title');
+  const grid = document.getElementById('cal-grid');
+  const y = calDate.getFullYear(), m = calDate.getMonth();
+  title.textContent = calMode === 'greg' ? `${gregMonths[m]} ${y}` : `סיוון–תמוז תשפ"ה`;
+  const first = new Date(y, m, 1).getDay(); // 0=Sun
+  // Adjust for Sunday start
+  const offset = first; // Sunday=0
+  const days = new Date(y, m+1, 0).getDate();
+  const today = new Date();
+  let html = '';
+  for(let i=0;i<offset;i++) html += '<div class="cal-day empty"></div>';
+  for(let d=1;d<=days;d++) {
+    const isToday = today.getDate()===d && today.getMonth()===m && today.getFullYear()===y;
+    const isShabbat = shabbatDays.includes(d);
+    const hasEvent = eventDays.includes(d);
+    const hasBday = bdayDays.includes(d);
+    let cls = 'cal-day';
+    if(isToday) cls += ' today';
+    else if(isShabbat && hasEvent) cls += ' has-booking shabbat';
+    else if(isShabbat) cls += ' shabbat';
+    if(hasEvent) cls += ' has-event';
+    if(hasBday) cls += ' has-bday';
+    const hebrewNums = ['','א','ב','ג','ד','ה','ו','ז','ח','ט','י','יא','יב','יג','יד','טו','טז','יז','יח','יט','כ','כא','כב','כג','כד','כה','כו','כז','כח','כט','ל'];
+    const label = calMode==='heb' ? (hebrewNums[d]||d) : d;
+    html += `<div class="${cls}" onclick="dayClick(${d})">${label}</div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function dayClick(d) {
+  showToast(`נבחר ${d} ביוני`);
+}
+
+function changeMonth(dir) {
+  calDate.setMonth(calDate.getMonth() + dir);
+  renderCalendar();
+}
+
+function goToday() {
+  calDate = new Date();
+  calDate.setDate(1);
+  renderCalendar();
+}
+
+function switchCal(mode, btn) {
+  calMode = mode;
+  document.querySelectorAll('#page-calendar .tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCalendar();
+}
+
+renderCalendar();
+
+// Nav
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// Modal
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if(e.target===el) el.classList.remove('open'); });
+});
+
+// Toast
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>

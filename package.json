@@ -1,0 +1,33 @@
+{
+  "name": "steinberg-family-app",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "date-fns": "^3.0.0",
+    "date-fns-tz": "^3.0.0",
+    "firebase": "^10.7.0",
+    "hebcal": "^2.3.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1"
+  },
+  "devDependencies": {
+    "firebase-admin": "^13.9.0",
+    "firebase-tools": "^13.0.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "deploy": "npm run build && firebase deploy"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version"
+    ]
+  }
+}
