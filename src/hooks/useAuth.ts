@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import {
   onAuthStateChanged,
   GoogleAuthProvider,
+  signInWithPopup,
   signInWithRedirect,
+  signInWithEmailAndPassword,
   getRedirectResult,
   signOut as firebaseSignOut,
   type User,
@@ -90,7 +92,17 @@ export function useAuth(): AuthState {
 
 export function signInWithGoogle(): void {
   const provider = new GoogleAuthProvider();
-  signInWithRedirect(auth, provider);
+  // Popup avoids the third-party-storage redirect failure when the app is
+  // served from web.app while authDomain is firebaseapp.com.
+  signInWithPopup(auth, provider).catch((err) => {
+    if (err?.code === 'auth/popup-blocked') {
+      signInWithRedirect(auth, provider);
+    }
+  });
+}
+
+export function signInWithEmail(email: string, password: string): Promise<void> {
+  return signInWithEmailAndPassword(auth, email, password).then(() => undefined);
 }
 
 export function signOut(): Promise<void> {
