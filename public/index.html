@@ -6696,7 +6696,12 @@ function renderTree() {
     const flagCc = p.originCountry ? (FLAG_CC[p.originCountry.trim()] || '') : '';
     const flag = flagCc ? `<img src="https://flagcdn.com/16x12/${flagCc}.png" alt="${flagCc.toUpperCase()}" style="vertical-align:middle;margin-left:3px;border-radius:1px">` : '';
     const hasParents = p.fatherId || p.motherId;
-    const inLaw = !hasParents && units.find(u => u.members.some(m => m.id !== p.id) && u.members.some(m => m.id === p.id));
+    // A person is an in-law only if they have no parents in the tree AND their partner does.
+    // This correctly excludes founding ancestors (neither partner has parents) from getting
+    // the dashed-border treatment, no matter how many generations are added above them.
+    const myUnit    = units.find(u => u.members.some(m => m.id === p.id));
+    const partner   = myUnit?.members.find(m => m.id !== p.id);
+    const inLaw = !hasParents && !!(partner && (partner.fatherId || partner.motherId));
     const classes = ['tree-card',
       deceased ? 'deceased' : '',
       inLaw    ? 'in-law'   : '',
