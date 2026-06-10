@@ -2,7 +2,10 @@
   "hosting": {
     "public": "public",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [{ "source": "**", "destination": "/index.html" }]
+    "rewrites": [
+      { "source": "/family-tree.html", "destination": "/family-tree.html" },
+      { "source": "**", "destination": "/index.html" }
+    ]
   },
   "firestore": {
     "rules": "firestore.rules"
