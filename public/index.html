@@ -574,64 +574,156 @@
   /* ===== FAMILY TREE ===== */
   #page-tree .main { padding: 0; max-width: 100%; }
   .tree-header { padding: 18px 24px 12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  .tree-breadcrumb {
+    width: 100%; font-size: 13px; padding: 0 24px 10px;
+    display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  .tree-breadcrumb.visible { opacity: 1; pointer-events: auto; }
+  .tree-breadcrumb-item {
+    color: var(--brown); font-weight: 600; cursor: pointer; transition: color 0.15s;
+  }
+  .tree-breadcrumb-item:hover { color: var(--gold); }
+  .tree-breadcrumb-item.bc-current { color: var(--gold); font-weight: 700; cursor: default; }
+  .tree-breadcrumb-sep { color: var(--brown-pale); font-size: 11px; }
   .tree-viewport {
     width: 100%; height: calc(100vh - 130px); min-height: 400px;
-    background: #1C0E06; overflow: hidden; position: relative; cursor: grab;
-    border-top: 2px solid #3a1e0e;
+    background: #F7F4EF; overflow: hidden; position: relative; cursor: grab;
+    border-top: 1px solid var(--border);
   }
   .tree-viewport.grabbing { cursor: grabbing; }
   .tree-svg-layer { position: absolute; top:0; left:0; transform-origin: 0 0; pointer-events: none; z-index: 1; }
   .tree-canvas    { position: absolute; top:0; left:0; transform-origin: 0 0; z-index: 2; }
   .tree-svg { position: absolute; top:0; left:0; overflow: visible; }
-  .tree-connector { stroke: #C9A84C; stroke-width: 1.8; fill: none; opacity: 0.7; }
+  .tree-connector       { stroke: rgba(28,28,30,0.18); stroke-width: 1.5; fill: none; }
+  .tree-connector-spine { stroke: var(--gold); stroke-width: 2;   fill: none; opacity: 0.55; }
   .tree-card {
     position: absolute; width: 140px; z-index: 2; overflow: hidden;
-    background: linear-gradient(160deg, #FEFAF3 0%, #F7EDD8 100%);
-    border: 2px solid #C9A84C; border-radius: 14px; padding: 10px 10px 8px;
-    cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,0.55);
-    transition: transform 0.15s, box-shadow 0.15s;
+    background: #FFFFFF;
+    border: 1.5px solid rgba(28,28,30,0.09); border-radius: 14px; padding: 11px 11px 9px;
+    cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+    transition: transform 0.18s cubic-bezier(0.16,1,0.3,1), box-shadow 0.18s ease, opacity 0.25s ease;
     font-family: 'Heebo', sans-serif;
   }
-  .tree-card:hover { transform: translateY(-4px) scale(1.03); box-shadow: 0 12px 32px rgba(201,168,76,0.5); border-color: #E8C840; }
-  .tree-card.deceased { background: linear-gradient(160deg,#EDE5D5 0%,#DDD0B8 100%); border-color: #9E8B6A; opacity: 0.85; }
-  .tree-card.in-law { border-style: dashed; border-color: #A88C5A; opacity: 0.82; }
-  .tree-card .tc-photo {
-    width: 44px; height: 44px; border-radius: 50%; object-fit: cover;
-    border: 2.5px solid #C9A84C; margin: 0 auto 6px; display: block; background: #C9A84C;
-    font-size: 16px; line-height: 44px; text-align: center; color: #fff; font-weight: 800;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  .tree-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.11), 0 0 0 2px var(--gold);
+    border-color: transparent;
   }
-  .tree-card.male .tc-photo   { border-color: #7BA7C9; background: #7BA7C9; }
-  .tree-card.female .tc-photo { border-color: #C97B9E; background: #C97B9E; }
-  .tree-card .tc-name { font-size: 12px; font-weight: 800; color: #1E1008; text-align: center; line-height: 1.3; }
-  .tree-card .tc-maiden { font-size: 10px; color: #7A5C3D; text-align: center; margin-top: 1px; }
-  .tree-card .tc-years { font-size: 10px; color: #6B4E30; text-align: center; margin-top: 3px; font-weight: 600; }
-  .tree-card .tc-city { font-size: 9px; color: #9A7558; text-align: center; margin-top: 2px; }
-  .tree-card .tc-story-icon { position:absolute; top:6px; left:8px; font-size:10px; opacity:0.65; }
+  .tree-card.spine { border-left: 3px solid var(--gold); }
+  .tree-card.spine .tc-photo { border-color: var(--gold); }
+  .tree-card.tc-dim { opacity: 0.2; pointer-events: none; }
+  .tree-card.tc-focused {
+    box-shadow: 0 8px 32px rgba(196,154,60,0.22), 0 0 0 2.5px var(--gold);
+    border-color: transparent; transform: translateY(-2px);
+  }
+  .tree-card.deceased { opacity: 0.72; filter: saturate(0.65); }
+  .tree-card.in-law { border-style: dashed; border-color: rgba(28,28,30,0.13); background: #FAFAF8; }
+  .tree-card .tc-photo {
+    width: 40px; height: 40px; border-radius: 50%; object-fit: cover;
+    border: 2px solid rgba(28,28,30,0.10); margin: 0 auto 7px; display: block;
+    background: var(--brown-pale);
+    font-size: 14px; line-height: 40px; text-align: center; color: var(--brown); font-weight: 700;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .tree-card .tc-name { font-size: 12px; font-weight: 700; color: #1C1C1E; text-align: center; line-height: 1.3; }
+  .tree-card .tc-maiden { font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 1px; }
+  .tree-card .tc-years { font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 4px; font-weight: 500; letter-spacing: 0.2px; }
+  .tree-card .tc-city { font-size: 9px; color: var(--text-muted); text-align: center; margin-top: 2px; opacity: 0.8; }
+  .tree-card .tc-story-icon { position:absolute; top:5px; left:7px; font-size:9px; opacity:0.45; }
   .tree-couple-line {
-    position: absolute; height: 2px; background: #C9A84C; opacity: 0.6;
+    position: absolute; height: 2px; background: var(--gold); opacity: 0.4;
     top: 0; transform-origin: left center;
   }
   .tree-add-btn {
     position: absolute; width:32px; height:32px; border-radius:50%;
-    background: rgba(201,168,76,0.15); border: 1.5px dashed #C9A84C;
-    color: #C9A84C; font-size: 18px; line-height: 30px; text-align: center;
+    background: rgba(196,154,60,0.10); border: 1.5px dashed var(--gold);
+    color: var(--gold); font-size: 18px; line-height: 30px; text-align: center;
     cursor: pointer; transition: background 0.15s;
   }
-  .tree-add-btn:hover { background: rgba(201,168,76,0.3); }
+  .tree-add-btn:hover { background: rgba(196,154,60,0.22); }
   .tree-zoom-controls {
     position: absolute; bottom: 18px; left: 18px; display: flex; gap: 8px; z-index: 10;
   }
   .tree-zoom-btn {
-    width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid #C9A84C;
-    background: rgba(28,14,6,0.8); color: #C9A84C; font-size: 18px;
+    width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border);
+    background: rgba(255,255,255,0.90); color: var(--brown); font-size: 18px;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px); box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: background 0.15s, border-color 0.15s;
   }
-  .tree-zoom-btn:hover { background: rgba(201,168,76,0.2); }
-  .tree-empty { color: #C9A84C; text-align: center; padding: 80px 24px; opacity: 0.7; font-size: 15px; }
+  .tree-zoom-btn:hover { background: var(--gold-bg); border-color: var(--gold-light); }
+  .tree-empty { color: var(--text-muted); text-align: center; padding: 80px 24px; opacity: 0.7; font-size: 15px; }
   #tree-viewport:fullscreen { width: 100vw; height: 100vh; border-radius: 0; }
   #tree-viewport:-webkit-full-screen { width: 100vw; height: 100vh; border-radius: 0; }
+
+  /* Tree detail side panel */
+  .tree-detail-panel {
+    position: fixed; top: 0; right: -380px; width: 360px; height: 100vh;
+    background: #FFFFFF; box-shadow: -4px 0 40px rgba(0,0,0,0.13);
+    z-index: 200; display: flex; flex-direction: column;
+    transition: right 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow-y: auto; border-left: 1px solid var(--border);
+  }
+  .tree-detail-panel.open { right: 0; }
+  .tree-panel-close-btn {
+    position: absolute; top: 16px; right: 16px;
+    background: var(--brown-bg); border: none; border-radius: 50%;
+    width: 32px; height: 32px; cursor: pointer; font-size: 15px;
+    color: var(--text-muted); display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s; line-height: 1; z-index: 1;
+  }
+  .tree-panel-close-btn:hover { background: var(--brown-pale); color: var(--brown); }
+  .tree-panel-photo {
+    width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
+    border: 3px solid var(--gold); display: flex; align-items: center; justify-content: center;
+    margin: 52px auto 16px; background: var(--brown-pale);
+    font-size: 28px; color: var(--brown); font-weight: 700; flex-shrink: 0;
+    box-shadow: 0 4px 16px rgba(196,154,60,0.18);
+  }
+  .tree-panel-photo img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; display: block; }
+  .tree-panel-name {
+    font-size: 22px; font-weight: 800; color: #1C1C1E;
+    text-align: center; padding: 0 24px; line-height: 1.3;
+  }
+  .tree-panel-latin { font-size: 13px; color: var(--text-muted); text-align: center; padding: 3px 24px 0; }
+  .tree-panel-years { font-size: 13px; color: var(--text-muted); text-align: center; padding: 5px 24px 0; letter-spacing: 0.3px; }
+  .tree-panel-spine-badge {
+    background: var(--gold-bg); border: 1px solid var(--gold-light); color: var(--brown);
+    font-size: 11px; font-weight: 700; border-radius: 99px; padding: 4px 12px;
+    margin: 10px auto 0; width: fit-content; display: none;
+  }
+  .tree-panel-divider { height: 1px; background: var(--brown-pale); margin: 18px 24px; }
+  .tree-panel-section { padding: 0 24px 14px; }
+  .tree-panel-label {
+    font-size: 11px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px;
+  }
+  .tree-panel-rel-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid var(--brown-pale);
+    cursor: pointer; transition: color 0.12s;
+  }
+  .tree-panel-rel-row:last-child { border-bottom: none; }
+  .tree-panel-rel-row:hover .tree-panel-rel-name { color: var(--gold); }
+  .tree-panel-rel-lbl { font-size: 11px; color: var(--text-muted); min-width: 64px; }
+  .tree-panel-rel-name { font-size: 13px; font-weight: 600; color: var(--brown); flex: 1; padding: 0 8px; }
+  .tree-panel-rel-arrow { font-size: 13px; color: var(--brown-pale); }
+  .tree-panel-story {
+    font-size: 13px; line-height: 1.8; color: var(--text-muted);
+    background: var(--brown-bg); padding: 12px; border-radius: var(--radius-sm);
+    margin: 0 24px 16px; white-space: pre-wrap;
+  }
+  .tree-panel-actions { padding: 16px 24px 32px; display: flex; gap: 10px; border-top: 1px solid var(--brown-pale); flex-wrap: wrap; }
+  .tree-panel-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25);
+    z-index: 199; backdrop-filter: blur(1px);
+  }
+  .tree-panel-overlay.visible { display: block; }
+  @media (max-width: 520px) {
+    .tree-detail-panel { width: 100%; right: -100%; }
+    .tree-detail-panel.open { right: 0; }
+  }
 
   /* Person detail modal */
   #modal-person-detail .modal { max-width: 500px; }
@@ -1182,6 +1274,11 @@
   .hosting-cond-section.visible { display:block; }
   .hosting-check-row { display:flex; align-items:center; gap:8px; padding:5px 0; font-size:14px; color:var(--text-mid); cursor:pointer; user-select:none; }
   .hosting-check-row input[type=checkbox] { width:16px; height:16px; accent-color:var(--brown); cursor:pointer; flex-shrink:0; }
+  .hosting-status-pending_host_approval  { background:var(--gold-bg);  color:#7a5c00; }
+  .hosting-status-pending_guest_approval { background:var(--blue-bg);  color:var(--blue); }
+  .hosting-page-card { border:1.5px solid var(--brown-pale); border-radius:var(--radius-md); padding:14px 16px; margin-bottom:10px; background:#fff; }
+  .hosting-page-card:last-child { margin-bottom:0; }
+  .hosting-approval-banner { border:2px solid var(--gold-light); border-radius:var(--radius-md); padding:14px 16px; margin-bottom:12px; background:var(--gold-bg); }
 
   /* ═══════════════════════════════════════════════════════
      WARM FAMILY DASHBOARD — Design System v3
@@ -1451,11 +1548,12 @@
   <button class="nav-btn" onclick="showPage('food',this)" aria-label="סעודות">🍽<span class="nav-label">סעודות</span></button>
   <button class="nav-btn" onclick="showPage('calendar',this)" aria-label="לוח שנה">📅<span class="nav-label">לוח שנה</span></button>
   <button class="nav-btn" onclick="showPage('family',this)" aria-label="משפחה">👨‍👩‍👧‍👦<span class="nav-label">משפחה</span></button>
+  <button class="nav-btn" id="nav-hosting" onclick="showPage('hosting',this);renderHostingPage()" aria-label="אירוחים">🏡<span class="nav-label">אירוחים</span></button>
   <button class="nav-btn nav-secondary" onclick="showPage('history',this);loadHistory()" aria-label="היסטוריה">📜<span class="nav-label">היסטוריה</span></button>
   <button class="nav-btn nav-secondary" onclick="showPage('tree',this)" aria-label="עץ משפחתי">🌳<span class="nav-label">עץ</span></button>
   <button class="nav-btn nav-secondary" onclick="showPage('guide',this)" aria-label="מדריך">📖<span class="nav-label">מדריך</span></button>
   <button class="nav-btn nav-secondary" onclick="showPage('notifications',this)" aria-label="התראות">🔔<span class="nav-label">התראות</span></button>
-  <button class="nav-btn nav-secondary" id="nav-dashboard" style="display:none" onclick="showPage('dashboard',this);loadDashboard();loadAdminHostingSection()" aria-label="דשבורד">📊<span class="nav-label">דשבורד</span><span id="dash-nav-badge" class="nav-alert-dot" style="display:none"></span></button>
+  <button class="nav-btn nav-secondary" id="nav-dashboard" style="display:none" onclick="showPage('dashboard',this);loadDashboard()" aria-label="דשבורד">📊<span class="nav-label">דשבורד</span><span id="dash-nav-badge" class="nav-alert-dot" style="display:none"></span></button>
 </nav>
 
 <!-- MOBILE BOTTOM NAVIGATION (visible on ≤640 px only via CSS) -->
@@ -1506,8 +1604,8 @@
       <button class="qa-btn" onclick="navTo('notifications')">
         <span class="qa-icon">📱</span><span class="qa-label">דוח לאמא</span>
       </button>
-      <button class="qa-btn" onclick="openHostingForm()">
-        <span class="qa-icon">🏡</span><span class="qa-label">אני רוצה לארח</span>
+      <button class="qa-btn" onclick="navTo('hosting')">
+        <span class="qa-icon">🏡</span><span class="qa-label">אירוחים</span>
       </button>
     </div>
 
@@ -1600,7 +1698,7 @@
           </div>
           <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
             <button class="btn btn-sm btn-primary" onclick="openHostingForm()">אני רוצה לארח</button>
-            <button id="hosting-admin-btn" class="btn btn-sm btn-outline" style="display:none" onclick="navTo('dashboard');setTimeout(()=>{const s=document.getElementById('hosting-admin-section');if(s)s.scrollIntoView({behavior:'smooth'})},450)">ניהול אירוחים</button>
+            <button id="hosting-admin-btn" class="btn btn-sm btn-outline" style="display:none" onclick="navTo('hosting')">ניהול אירוחים</button>
           </div>
         </div>
         <div id="hosting-home-list" style="padding:12px 18px"></div>
@@ -1609,6 +1707,38 @@
 
     <!-- upcoming-list kept hidden for JS rendering (used elsewhere) -->
     <div id="upcoming-list" style="display:none"></div>
+  </div>
+
+  <!-- ===== HOSTING ===== -->
+  <div class="page" id="page-hosting">
+    <div class="section-header">
+      <div class="section-title">🏡 אירוחים</div>
+      <button class="btn btn-primary btn-sm" onclick="openHostingForm()">+ אני רוצה לארח</button>
+    </div>
+
+    <!-- Event filter -->
+    <div class="card" style="padding:12px 16px;margin-bottom:16px">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">סנן לפי אירוע</label>
+        <select id="hosting-page-event-filter" class="form-select event-select" onchange="renderHostingPage()"></select>
+      </div>
+    </div>
+
+    <!-- Pending host-approval notifications -->
+    <div id="hosting-page-approvals"></div>
+
+    <!-- Available hosts -->
+    <div style="font-size:14px;font-weight:700;color:var(--text-mid);margin-bottom:8px">משפחות פתוחות לאירוח</div>
+    <div id="hosting-page-list"><div class="state-loading">טוען...</div></div>
+
+    <!-- Admin management section -->
+    <div id="hosting-page-admin" style="display:none;margin-top:24px">
+      <div class="section-header" style="margin-bottom:8px">
+        <div style="font-size:14px;font-weight:700;color:var(--text-mid)">ניהול מנהל — כל הרשומות</div>
+        <button class="btn btn-sm btn-outline" onclick="renderHostingPage()">🔄 רענן</button>
+      </div>
+      <div id="hosting-page-admin-list"><div class="state-loading">טוען...</div></div>
+    </div>
   </div>
 
   <!-- ===== HISTORY ===== -->
@@ -1853,6 +1983,7 @@
           <button id="btn-add-tree-person" class="btn btn-primary btn-sm" onclick="openAddTreePerson()" style="display:none">+ הוסף אדם</button>
         </div>
       </div>
+      <div class="tree-breadcrumb" id="tree-breadcrumb"></div>
       <div class="tree-viewport" id="tree-viewport">
         <div class="tree-svg-layer" id="tree-svg-layer"><svg class="tree-svg" id="tree-svg"></svg></div>
         <div class="tree-canvas" id="tree-canvas"></div>
@@ -1867,6 +1998,27 @@
           <div style="font-size:13px;margin-top:8px;opacity:0.6">לחץ על "+ הוסף אדם" להתחלה</div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Tree detail side panel -->
+  <div class="tree-panel-overlay" id="tree-panel-overlay" onclick="closeTreePanel()"></div>
+  <div class="tree-detail-panel" id="tree-detail-panel">
+    <button class="tree-panel-close-btn" onclick="closeTreePanel()">✕</button>
+    <div class="tree-panel-photo" id="tree-panel-photo"></div>
+    <div class="tree-panel-name" id="tree-panel-name"></div>
+    <div class="tree-panel-latin" id="tree-panel-latin"></div>
+    <div class="tree-panel-years" id="tree-panel-years"></div>
+    <div class="tree-panel-spine-badge" id="tree-panel-spine-badge">✦ שושלת שטיינברג</div>
+    <div class="tree-panel-divider"></div>
+    <div class="tree-panel-section">
+      <div class="tree-panel-label">קשרים משפחתיים</div>
+      <div id="tree-panel-rels"></div>
+    </div>
+    <div class="tree-panel-story" id="tree-panel-story" style="display:none"></div>
+    <div class="tree-panel-actions" id="tree-panel-actions">
+      <button class="btn btn-outline btn-sm" id="tree-panel-edit-btn" style="display:none">ערוך</button>
+      <button class="btn btn-outline btn-sm" style="color:var(--terracotta)" id="tree-panel-del-btn" style="display:none">מחק</button>
     </div>
   </div>
 
@@ -1943,20 +2095,11 @@
       </div>
     </div>
 
-    <!-- Hosting management (admin only) -->
+    <!-- Hosting management shortcut (admin only) -->
     <div id="hosting-admin-section" style="margin-top:20px">
-      <div class="section-header" style="margin-bottom:12px">
-        <div class="section-title">🏡 ניהול אירוחים</div>
-        <button class="btn btn-sm btn-outline" onclick="loadAdminHostingSection()">🔄 רענן</button>
-      </div>
-      <div class="card">
-        <div class="form-group" style="margin-bottom:12px">
-          <label class="form-label">סנן לפי אירוע</label>
-          <select id="hosting-admin-event-filter" class="form-select event-select" onchange="loadAdminHostingSection()"></select>
-        </div>
-        <div id="hosting-admin-list">
-          <div class="state-loading">טוען...</div>
-        </div>
+      <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
+        <div style="font-size:14px;font-weight:700;color:var(--brown)">🏡 ניהול אירוחים</div>
+        <button class="btn btn-outline btn-sm" onclick="navTo('hosting')">פתח דף אירוחים ›</button>
       </div>
     </div>
   </div>
@@ -1979,6 +2122,11 @@
     <div class="form-group">
       <label class="form-label">משפחה מארחת <span style="color:var(--terracotta)">*</span></label>
       <select id="hosting-family-id" class="form-select family-select"></select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">עיר / יישוב</label>
+      <input type="text" id="hosting-city" class="form-input" placeholder="לדוגמה: ירושלים, מודיעין...">
     </div>
 
     <div class="form-group">
@@ -2039,6 +2187,25 @@
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('modal-hosting-form')">ביטול</button>
       <button class="btn btn-primary" id="hosting-submit-btn" onclick="submitHostingForm()">🏡 הוסף זמינות אירוח</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hosting Guest Match Modal (admin only) -->
+<div class="modal-overlay" id="modal-hosting-match">
+  <div class="modal">
+    <div class="modal-title">🤝 התאמת אורחים</div>
+    <input type="hidden" id="match-hosting-id">
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+      בחר משפחת אורחים עבור המשפחה המארחת: <strong id="match-modal-host-name"></strong>
+    </div>
+    <div class="form-group">
+      <label class="form-label">משפחת אורחים <span style="color:var(--terracotta)">*</span></label>
+      <select id="match-guest-family-id" class="form-select"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-hosting-match')">ביטול</button>
+      <button class="btn btn-primary" onclick="submitGuestMatch()">שלח הצעת אירוח →</button>
     </div>
   </div>
 </div>
@@ -6006,6 +6173,7 @@ let _treePersons   = [];
 let _editingTreeId = null;
 let _treeScale     = 1;
 let _treePan       = { x: 60, y: 60 };
+let _focusedTreeId = null;
 let _treeDrag      = null;
 let _treeFitPending = false;
 
@@ -6016,6 +6184,171 @@ function loadFamilyTree() {
     _treePersons = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderTree();
   }, err => console.error('familyTree load error:', err));
+}
+
+// ── Spine / Focus helpers ──────────────────────────────────
+function getSpineIds(persons) {
+  const s = new Set();
+  persons.forEach(p => {
+    const he = (p.nameHe    || '').toLowerCase();
+    const la = (p.nameLatin || '').toLowerCase();
+    if (he.includes('שטיינברג') || la.includes('shteinberg') || la.includes('steinberg')) s.add(p.id);
+  });
+  return s;
+}
+
+function _computeAncestors(id, byId) {
+  const out = new Set();
+  const visit = pid => {
+    if (!pid || out.has(pid)) return;
+    out.add(pid);
+    const p = byId[pid];
+    if (p) { visit(p.fatherId); visit(p.motherId); }
+  };
+  const p = byId[id];
+  if (p) { visit(p.fatherId); visit(p.motherId); }
+  return out;
+}
+
+function _computeDescendants(id, persons) {
+  const kids = {};
+  persons.forEach(p => {
+    [p.fatherId, p.motherId].forEach(pid => {
+      if (pid) (kids[pid] = kids[pid] || []).push(p.id);
+    });
+  });
+  const out = new Set();
+  const visit = pid => {
+    if (out.has(pid)) return;
+    out.add(pid);
+    (kids[pid] || []).forEach(visit);
+  };
+  (kids[id] || []).forEach(visit);
+  return out;
+}
+
+function applyTreeFocus(id) {
+  _focusedTreeId = id;
+  const byId = Object.fromEntries(_treePersons.map(p => [p.id, p]));
+  const ancestors   = _computeAncestors(id, byId);
+  const descendants = _computeDescendants(id, _treePersons);
+  const lit = new Set([id, ...ancestors, ...descendants]);
+  // Also keep spouses of lit people visible
+  _treePersons.forEach(p => { if (lit.has(p.id) && p.spouseId) lit.add(p.spouseId); });
+
+  document.querySelectorAll('.tree-card').forEach(el => {
+    const pid = el.dataset.pid;
+    el.classList.remove('tc-dim', 'tc-focused');
+    if (pid === id)       el.classList.add('tc-focused');
+    else if (!lit.has(pid)) el.classList.add('tc-dim');
+  });
+
+  _renderTreeBreadcrumb(id, byId);
+}
+
+function clearTreeFocus() {
+  _focusedTreeId = null;
+  document.querySelectorAll('.tree-card').forEach(el => el.classList.remove('tc-dim', 'tc-focused'));
+  const bc = document.getElementById('tree-breadcrumb');
+  if (bc) { bc.classList.remove('visible'); bc.innerHTML = ''; }
+}
+
+function _renderTreeBreadcrumb(id, byId) {
+  const bc = document.getElementById('tree-breadcrumb');
+  if (!bc) return;
+  const chain = [];
+  let cur = byId[id];
+  const seen = new Set();
+  while (cur && !seen.has(cur.id)) {
+    chain.unshift(cur);
+    seen.add(cur.id);
+    cur = cur.fatherId && byId[cur.fatherId] ? byId[cur.fatherId]
+        : cur.motherId && byId[cur.motherId] ? byId[cur.motherId] : null;
+  }
+  if (chain.length <= 1) { bc.classList.remove('visible'); return; }
+  const parts = [];
+  chain.forEach((p, i) => {
+    const isCur = i === chain.length - 1;
+    parts.push(`<span class="tree-breadcrumb-item${isCur ? ' bc-current' : ''}"
+      ${isCur ? '' : `onclick="openPersonDetail('${p.id}')"`}>${esc(p.nameHe || p.nameLatin || '?')}</span>`);
+    if (!isCur) parts.push('<span class="tree-breadcrumb-sep"> → </span>');
+  });
+  bc.innerHTML = parts.join('');
+  bc.classList.add('visible');
+}
+
+function openTreePanel(id) {
+  const p = _treePersons.find(x => x.id === id);
+  if (!p) return;
+  const byId     = Object.fromEntries(_treePersons.map(x => [x.id, x]));
+  const spineIds = getSpineIds(_treePersons);
+
+  // Photo
+  const photoWrap = document.getElementById('tree-panel-photo');
+  if (photoWrap) {
+    if (p.photoData) {
+      photoWrap.innerHTML = `<img src="${p.photoData}" alt="">`;
+    } else {
+      const init = (p.nameHe || '?').split(' ').map(w => w[0]).join('').slice(0, 2);
+      photoWrap.innerHTML = init;
+    }
+  }
+
+  // Name / latin / years
+  const nameEl = document.getElementById('tree-panel-name');
+  if (nameEl) nameEl.textContent = [p.nameHe, p.nickname ? `"${p.nickname}"` : ''].filter(Boolean).join(' ');
+  const latinEl = document.getElementById('tree-panel-latin');
+  if (latinEl) latinEl.textContent = [p.nameLatin, p.maidenName ? `(${p.maidenName})` : ''].filter(Boolean).join(' ');
+  const yearsEl = document.getElementById('tree-panel-years');
+  if (yearsEl) {
+    const yrs = [p.birthYear, p.deathYear].filter(Boolean).join(' — ');
+    const loc  = [p.birthCity, p.originCountry].filter(Boolean).join(', ');
+    yearsEl.textContent = [yrs, loc].filter(Boolean).join('  ·  ');
+  }
+
+  // Spine badge
+  const badge = document.getElementById('tree-panel-spine-badge');
+  if (badge) badge.style.display = spineIds.has(id) ? 'block' : 'none';
+
+  // Relations
+  const relsEl = document.getElementById('tree-panel-rels');
+  if (relsEl) {
+    const father   = p.fatherId ? byId[p.fatherId] : null;
+    const mother   = p.motherId ? byId[p.motherId] : null;
+    const spouse   = p.spouseId ? byId[p.spouseId] : null;
+    const children = _treePersons.filter(x => x.fatherId === id || x.motherId === id);
+    const rows = [];
+    if (father)   rows.push({ lbl: 'אב',       person: father });
+    if (mother)   rows.push({ lbl: 'אם',       person: mother });
+    if (spouse)   rows.push({ lbl: 'בן/בת זוג', person: spouse });
+    children.forEach(c => rows.push({ lbl: 'ילד/ה', person: c }));
+    relsEl.innerHTML = rows.map(r =>
+      `<div class="tree-panel-rel-row" onclick="openPersonDetail('${r.person.id}')">
+        <span class="tree-panel-rel-lbl">${esc(r.lbl)}</span>
+        <span class="tree-panel-rel-name">${esc(r.person.nameHe || r.person.nameLatin || '?')}</span>
+        <span class="tree-panel-rel-arrow">→</span>
+       </div>`).join('');
+  }
+
+  // Story
+  const storyEl = document.getElementById('tree-panel-story');
+  if (storyEl) { storyEl.textContent = p.story || ''; storyEl.style.display = p.story ? '' : 'none'; }
+
+  // Burial (add if present)
+  // Edit / delete
+  const editBtn = document.getElementById('tree-panel-edit-btn');
+  const delBtn  = document.getElementById('tree-panel-del-btn');
+  if (editBtn) { editBtn.onclick = () => { closeTreePanel(); editTreePerson(id); }; editBtn.style.display = currentUser ? '' : 'none'; }
+  if (delBtn)  { delBtn.onclick  = () => deleteTreePerson(id); delBtn.style.display = isAdmin ? '' : 'none'; }
+
+  document.getElementById('tree-detail-panel').classList.add('open');
+  document.getElementById('tree-panel-overlay').classList.add('visible');
+}
+
+function closeTreePanel() {
+  document.getElementById('tree-detail-panel').classList.remove('open');
+  document.getElementById('tree-panel-overlay').classList.remove('visible');
+  clearTreeFocus();
 }
 
 // ── Layout ─────────────────────────────────────────────────
@@ -6264,6 +6597,8 @@ function renderTree() {
   const W = Math.max(...allPos.map(p => p.x)) + CARD_W + 120;
   const H = Math.max(...allPos.map(p => p.y)) + CARD_H + 160;
 
+  const spineIds = getSpineIds(_treePersons);
+
   // Unit helper: center-x and bottom-y of a couple unit
   const unitCx = u => {
     const ps = u.members.map(m => positions[m.id]).filter(Boolean);
@@ -6282,12 +6617,11 @@ function renderTree() {
     if (!p1 || !p2) return;
     const ly = p1.y + CARD_H * 0.38;
     const x1 = p1.x + CARD_W, x2 = p2.x;
-    svgLines += `<line class="tree-connector" x1="${x1}" y1="${ly}" x2="${x2}" y2="${ly}" stroke-dasharray="5 3" opacity="0.85"/>`;
-    svgLines += `<text x="${(x1+x2)/2}" y="${ly-6}" text-anchor="middle" font-size="11" fill="#C9A84C" opacity="0.9">♥</text>`;
+    svgLines += `<line class="tree-connector" x1="${x1}" y1="${ly}" x2="${x2}" y2="${ly}" stroke-dasharray="4 3" opacity="0.6"/>`;
+    svgLines += `<text x="${(x1+x2)/2}" y="${ly-5}" text-anchor="middle" font-size="10" fill="var(--gold)" opacity="0.8">♥</text>`;
   });
 
-  // Parent→children T-junction connectors
-  // Lines go to the ACTUAL child's card, not the couple midpoint
+  // Parent→children — smooth bezier curves, one per child
   const actualChildCx = (parentUnit, childUnit) => {
     const parentIds = parentUnit.members.map(m => m.id);
     const actual = childUnit.members.find(m =>
@@ -6303,17 +6637,16 @@ function renderTree() {
     const pbot = unitBotY(u);
     const validChildren = u.childUnits.filter(cu => cu.members[0] && positions[cu.members[0].id]);
     if (!validChildren.length) return;
-    const childCxs = validChildren.map(cu => actualChildCx(u, cu));
-    const firstChildTop = unitTopY(validChildren[0]);
-    const midY = pbot + (firstChildTop - pbot) / 2;
+    const GAP = 6;
+    const isSpineParent = u.members.some(m => spineIds.has(m.id));
 
-    const GAP = 6; // px gap so lines never touch card edges
-    svgLines += `<line class="tree-connector" x1="${pcx}" y1="${pbot + GAP}" x2="${pcx}" y2="${midY}"/>`;
-    const barL = Math.min(pcx, ...childCxs), barR = Math.max(pcx, ...childCxs);
-    if (barL < barR) svgLines += `<line class="tree-connector" x1="${barL}" y1="${midY}" x2="${barR}" y2="${midY}"/>`;
-    validChildren.forEach((cu, i) => {
-      const cx = childCxs[i], top = unitTopY(cu);
-      svgLines += `<line class="tree-connector" x1="${cx}" y1="${midY}" x2="${cx}" y2="${top - GAP}"/>`;
+    validChildren.forEach(cu => {
+      const cx       = actualChildCx(u, cu);
+      const childTop = unitTopY(cu);
+      const midY     = pbot + (childTop - pbot) * 0.5;
+      const isSpineChild = cu.members.some(m => spineIds.has(m.id));
+      const cls = (isSpineParent && isSpineChild) ? 'tree-connector-spine' : 'tree-connector';
+      svgLines += `<path class="${cls}" d="M ${pcx},${pbot+GAP} C ${pcx},${midY} ${cx},${midY} ${cx},${childTop-GAP}"/>`;
     });
   });
 
@@ -6328,46 +6661,48 @@ function renderTree() {
   // Person cards only in the canvas
   let cardsHtml = '';
   const renderedIds = new Set();
+  const FLAG_CC = {
+    'ישראל':'il','ארץ ישראל':'il','פלסטין':'il','ארץ-ישראל':'il',
+    'רומניה':'ro','רוּמָניה':'ro',
+    'אוקראינה':'ua','אוקריאינה':'ua','אוקאינה':'ua','אוקרינה':'ua',
+    'רוסיה':'ru','ברית המועצות':'ru','ברה"מ':'ru',
+    'פולין':'pl','פולניה':'pl','הונגריה':'hu','גרמניה':'de',
+    'אוסטריה':'at','אוסטריה-הונגריה':'at',
+    'אמריקה':'us','ארצות הברית':'us','ארה"ב':'us',
+    'אנגליה':'gb','בריטניה':'gb','צרפת':'fr','בלגיה':'be',
+    'ארגנטינה':'ar','ברזיל':'br','קנדה':'ca',
+    'מרוקו':'ma','תוניסיה':'tn','אלגריה':'dz','לוב':'ly','מצרים':'eg',
+    'תורכיה':'tr','טורקיה':'tr','יוון':'gr',
+    'לבנון':'lb','סוריה':'sy','עיראק':'iq','איראן':'ir','פרס':'ir',
+    'בלארוס':'by','ליטא':'lt','לטביה':'lv','אסטוניה':'ee',
+    'צ\'כיה':'cz','צכיה':'cz','סלובקיה':'sk',
+    'בולגריה':'bg','יוגוסלביה':'rs','סרביה':'rs',
+    'שוויץ':'ch','שוודיה':'se','דנמרק':'dk','נורווגיה':'no',
+    'אוסטרליה':'au','ניו זילנד':'nz',
+  };
   _treePersons.forEach(p => {
     if (renderedIds.has(p.id)) return; // guard against duplicate Firestore docs
     renderedIds.add(p.id);
     const pos = positions[p.id];
     if (!pos) return;
     const deceased = !!p.deathYear;
+    const isSpine  = spineIds.has(p.id);
     const initials  = (p.nameHe || '?').split(' ').map(w => w[0]).join('').slice(0, 2);
     const photoHtml = p.photoData
       ? `<img class="tc-photo" src="${p.photoData}" alt="">`
       : `<div class="tc-photo">${initials}</div>`;
     const years = [p.birthYear, p.deathYear].filter(Boolean).join(' – ');
     const city  = [p.birthCity, p.originCountry].filter(Boolean).join(', ');
-    const FLAG_CC = {
-      'ישראל':'il','ארץ ישראל':'il','פלסטין':'il','ארץ-ישראל':'il',
-      'רומניה':'ro','רוּמָניה':'ro',
-      'אוקראינה':'ua','אוקריאינה':'ua','אוקאינה':'ua','אוקרינה':'ua',
-      'רוסיה':'ru','ברית המועצות':'ru','ברה"מ':'ru',
-      'פולין':'pl','פולניה':'pl',
-      'הונגריה':'hu',
-      'גרמניה':'de',
-      'אוסטריה':'at','אוסטריה-הונגריה':'at',
-      'אמריקה':'us','ארצות הברית':'us','ארה"ב':'us',
-      'אנגליה':'gb','בריטניה':'gb',
-      'צרפת':'fr','בלגיה':'be',
-      'ארגנטינה':'ar','ברזיל':'br','קנדה':'ca',
-      'מרוקו':'ma','תוניסיה':'tn','אלגריה':'dz','לוב':'ly','מצרים':'eg',
-      'תורכיה':'tr','טורקיה':'tr','יוון':'gr',
-      'לבנון':'lb','סוריה':'sy','עיראק':'iq','איראן':'ir','פרס':'ir',
-      'בלארוס':'by','ליטא':'lt','לטביה':'lv','אסטוניה':'ee',
-      'צ\'כיה':'cz','צכיה':'cz','סלובקיה':'sk',
-      'בולגריה':'bg','יוגוסלביה':'rs','סרביה':'rs',
-      'שוויץ':'ch','שוודיה':'se','דנמרק':'dk','נורווגיה':'no',
-      'אוסטרליה':'au','ניו זילנד':'nz',
-    };
     const flagCc = p.originCountry ? (FLAG_CC[p.originCountry.trim()] || '') : '';
     const flag = flagCc ? `<img src="https://flagcdn.com/16x12/${flagCc}.png" alt="${flagCc.toUpperCase()}" style="vertical-align:middle;margin-left:3px;border-radius:1px">` : '';
-      const hasParents = p.fatherId || p.motherId;
+    const hasParents = p.fatherId || p.motherId;
     const inLaw = !hasParents && units.find(u => u.members.some(m => m.id !== p.id) && u.members.some(m => m.id === p.id));
-    const genderClass = p.gender === 'm' ? ' male' : p.gender === 'f' ? ' female' : '';
-    cardsHtml += `<div class="tree-card${deceased?' deceased':''}${inLaw?' in-law':''}${genderClass}" style="left:${pos.x}px;top:${pos.y}px" onclick="openPersonDetail('${p.id}')">
+    const classes = ['tree-card',
+      deceased ? 'deceased' : '',
+      inLaw    ? 'in-law'   : '',
+      isSpine  ? 'spine'    : '',
+    ].filter(Boolean).join(' ');
+    cardsHtml += `<div class="${classes}" data-pid="${p.id}" style="left:${pos.x}px;top:${pos.y}px" onclick="openPersonDetail('${p.id}')">
       ${p.story ? '<span class="tc-story-icon">📖</span>' : ''}
       ${photoHtml}
       <div class="tc-name">${esc(p.nameHe||'')}</div>
@@ -6509,7 +6844,7 @@ function editTreePerson(id) {
   const p = _treePersons.find(x => x.id === id);
   if (!p) return;
   _editingTreeId = id;
-  closeModal('modal-person-detail');
+  closeTreePanel();
   document.getElementById('tp-name-he').value    = p.nameHe    || '';
   document.getElementById('tp-name-latin').value = p.nameLatin || '';
   document.getElementById('tp-nickname').value   = p.nickname  || '';
@@ -6612,41 +6947,13 @@ async function deleteTreePerson(id) {
   const p = _treePersons.find(x => x.id === id);
   if (p?.spouseId) await db.collection('familyTree').doc(p.spouseId).update({ spouseId: firebase.firestore.FieldValue.delete() });
   await db.collection('familyTree').doc(id).delete();
-  closeModal('modal-person-detail');
+  closeTreePanel();
   showToast('נמחק מהעץ');
 }
 
 function openPersonDetail(id) {
-  const p = _treePersons.find(x => x.id === id);
-  if (!p) return;
-  const photoEl = document.getElementById('pd-photo');
-  if (p.photoData) {
-    photoEl.innerHTML = `<img src="${p.photoData}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);display:block;margin:0 auto 12px">`;
-  } else {
-    const initials = (p.nameHe || '?').split(' ').map(w => w[0]).join('').slice(0, 2);
-    photoEl.innerHTML = `<div style="width:80px;height:80px;border-radius:50%;background:var(--gold);font-size:28px;line-height:80px;text-align:center;color:#fff;font-weight:700;margin:0 auto 12px">${initials}</div>`;
-  }
-  document.getElementById('pd-name').textContent  = [p.nameHe, p.nickname ? `"${p.nickname}"` : ''].filter(Boolean).join(' ');
-  document.getElementById('pd-latin').textContent = [p.nameLatin, p.maidenName ? `(${p.maidenName})` : ''].filter(Boolean).join(' ');
-
-  const meta = [];
-  if (p.birthYear || p.deathYear) meta.push(`📅 ${[p.birthYear, p.deathYear].filter(Boolean).join(' – ')}`);
-  if (p.birthCity)     meta.push(`📍 ${p.birthCity}`);
-  if (p.originCountry) meta.push(`🌍 ${p.originCountry}`);
-  if (p.burialPlace)   meta.push(`🪦 ${p.burialPlace}`);
-  const spouse = p.spouseId ? _treePersons.find(x => x.id === p.spouseId) : null;
-  if (spouse)          meta.push(`💍 ${spouse.nameHe}`);
-  document.getElementById('pd-meta').innerHTML = meta.map(m => `<div style="font-size:12px;color:var(--text-muted)">${esc(m)}</div>`).join('');
-
-  const storyEl = document.getElementById('pd-story');
-  if (p.story) { storyEl.textContent = p.story; storyEl.style.display = ''; }
-  else storyEl.style.display = 'none';
-
-  document.getElementById('pd-edit-btn').onclick   = () => editTreePerson(id);
-  document.getElementById('pd-delete-btn').onclick = () => deleteTreePerson(id);
-  document.getElementById('pd-delete-btn').style.display = isAdmin ? '' : 'none';
-  document.getElementById('pd-edit-btn').style.display   = currentUser ? '' : 'none';
-  openModal('modal-person-detail');
+  applyTreeFocus(id);
+  openTreePanel(id);
 }
 
 // ── Init ───────────────────────────────────────────────────
@@ -6895,6 +7202,7 @@ let _editingHostingId    = null;
 
 const HOSTING_STATUS_LABELS = {
   draft: 'טיוטה', available: 'פנוי', matched: 'שויך',
+  pending_host_approval: 'ממתין לאישור מארח', pending_guest_approval: 'ממתין לאישור אורח',
   confirmed: 'אושר', cancelled: 'בוטל', expired: 'פג תוקף'
 };
 
@@ -6904,6 +7212,7 @@ function loadHostingAvailability() {
       _hostingAvailability = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       _autoExpireHosting();
       renderHomeHostingCard();
+      if (document.getElementById('page-hosting')?.classList.contains('active')) renderHostingPage();
     }, () => {})
   );
 }
@@ -6927,60 +7236,77 @@ function renderHomeHostingCard() {
   const adminBtn = document.getElementById('hosting-admin-btn');
   if (adminBtn) adminBtn.style.display = isAdmin ? '' : 'none';
 
-  const eventId = _activeFocusEvent ? _activeFocusEvent.id : null;
-  const active  = _hostingAvailability.filter(h =>
+  const eventId   = _activeFocusEvent ? _activeFocusEvent.id : null;
+  const active    = _hostingAvailability.filter(h =>
     h.status !== 'cancelled' && h.status !== 'expired' &&
     (!eventId || h.eventId === eventId)
   );
+  const available = active.filter(h => h.status === 'available');
 
   const countEl = document.getElementById('hosting-home-count');
   const listEl  = document.getElementById('hosting-home-list');
 
-  if (active.length === 0) {
-    if (countEl) countEl.textContent = eventId ? 'עדיין אין משפחות שפתחו אירוח לאירוע הזה' : '';
-    if (listEl)  listEl.innerHTML = '';
+  // Admin: just show count and let the dedicated page handle management
+  if (isAdmin) {
+    if (countEl) countEl.textContent = available.length
+      ? `${available.length} משפחות פתוחות לאירוח`
+      : (eventId ? 'אין זמינות אירוח לאירוע זה' : '');
+    if (listEl) listEl.innerHTML = '';
     return;
   }
 
-  if (countEl) countEl.textContent = `${active.length} משפחות מוכנות לארח`;
+  // Non-admin: show pending host-approval notifications + available host list
+  let html = '';
 
-  if (!isAdmin) {
-    const mine = currentUser ? active.filter(h => h.createdByUserId === currentUser.uid) : [];
-    if (listEl) listEl.innerHTML = mine.length === 0
-      ? `<div style="font-size:13px;color:var(--text-muted)">לא פתחת זמינות אירוח לאירוע הזה עדיין.</div>`
-      : mine.map(h => _renderMyHostingRow(h)).join('');
-    return;
-  }
-
-  if (listEl) {
-    const shown = active.slice(0, 4);
-    listEl.innerHTML = shown.map(h => {
-      const fam   = _allFamilies.find(f => f.id === h.familyUnitId);
-      const label = fam ? esc([fam.husband, fam.wife].filter(Boolean).join(' ו')) : '—';
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--brown-pale)">
-        <span style="font-size:13px;font-weight:700;color:var(--brown)">${label}</span>
-        <div style="display:flex;align-items:center;gap:6px">
-          <span style="font-size:12px;color:var(--text-muted)">${_hostingTypeLabel(h)}</span>
-          <span class="hosting-status-badge hosting-status-${h.status}">${HOSTING_STATUS_LABELS[h.status] || h.status}</span>
+  if (currentUser) {
+    const pendingMyApproval = active.filter(h =>
+      h.status === 'pending_host_approval' && h.createdByUserId === currentUser.uid
+    );
+    pendingMyApproval.forEach(h => {
+      const guestFam   = h.matchedGuestFamilyId ? _allFamilies.find(f => f.id === h.matchedGuestFamilyId) : null;
+      const guestLabel = guestFam ? esc([guestFam.husband, guestFam.wife].filter(Boolean).join(' ו')) : '—';
+      const guestCount = guestFam ? ((guestFam.adults || 2) + (guestFam.kids || 0)) : 0;
+      html += `<div class="hosting-approval-banner">
+        <div style="font-size:13px;font-weight:800;color:var(--brown);margin-bottom:6px">⚠️ בקשת אירוח חדשה</div>
+        <div style="font-size:13px;color:var(--text-mid);margin-bottom:8px">${guestLabel}${guestCount ? ` · ${guestCount} נפשות` : ''}</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm btn-primary" onclick="approveHostingAsHost('${h.id}')">אשר ✓</button>
+          <button class="btn btn-sm btn-outline" style="color:var(--terracotta)" onclick="rejectHostingAsHost('${h.id}')">דחה</button>
         </div>
       </div>`;
-    }).join('') + (active.length > 4 ? `<div style="font-size:12px;color:var(--text-muted);margin-top:6px">ועוד ${active.length - 4} נוספות...</div>` : '');
+    });
   }
+
+  if (countEl) countEl.textContent = available.length
+    ? `${available.length} משפחות פתוחות לאירוח`
+    : '';
+
+  // Show up to 3 available hosts
+  const shown = available.slice(0, 3);
+  html += shown.map(h => {
+    const fam      = _allFamilies.find(f => f.id === h.familyUnitId);
+    const famLabel = fam ? esc([fam.husband, fam.wife].filter(Boolean).join(' ו')) : '—';
+    const city     = h.city ? ` · <span style="color:var(--text-muted);font-weight:400">${esc(h.city)}</span>` : '';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--brown-pale)">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--brown)">${famLabel}${city}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:1px">${_hostingTypeLabel(h)}</div>
+      </div>
+      <button class="btn btn-sm btn-outline" onclick="navTo('hosting')" style="flex-shrink:0">פרטים</button>
+    </div>`;
+  }).join('');
+
+  if (available.length > 3) {
+    html += `<div style="font-size:12px;color:var(--text-muted);padding:6px 0">ועוד ${available.length - 3} נוספות...</div>`;
+  }
+
+  if (!available.length && !html) {
+    html = `<div style="font-size:13px;color:var(--text-muted)">${eventId ? 'עדיין אין משפחות שפתחו אירוח לאירוע הזה' : ''}</div>`;
+  }
+
+  if (listEl) listEl.innerHTML = html;
 }
 
-function _renderMyHostingRow(h) {
-  return `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:6px 0;font-size:13px">
-    <div>
-      <div style="color:var(--text-mid);font-weight:600">${_hostingTypeLabel(h)}</div>
-      ${h.notes ? `<div style="color:var(--text-muted);font-size:12px;margin-top:2px">${esc(h.notes)}</div>` : ''}
-    </div>
-    <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
-      <span class="hosting-status-badge hosting-status-${h.status}">${HOSTING_STATUS_LABELS[h.status] || h.status}</span>
-      <button class="btn btn-sm btn-outline" onclick="openHostingForm('${h.id}')">✏️</button>
-      <button class="btn btn-sm btn-outline" style="color:var(--terracotta)" onclick="cancelHostingAvailability('${h.id}')">✕</button>
-    </div>
-  </div>`;
-}
 
 function _hostingTypeLabel(h) {
   const types = h.hostingTypes || [];
@@ -7015,6 +7341,7 @@ function openHostingForm(id) {
   ['hosting-beds','hosting-mattresses'].forEach(fId => { const el = document.getElementById(fId); if (el) el.value = 0; });
   const maxEl   = document.getElementById('hosting-max-family'); if (maxEl)   maxEl.value   = '';
   const notesEl = document.getElementById('hosting-notes');      if (notesEl) notesEl.value = '';
+  const cityEl  = document.getElementById('hosting-city');       if (cityEl)  cityEl.value  = '';
 
   if (id) {
     const h = _hostingAvailability.find(x => x.id === id);
@@ -7032,6 +7359,7 @@ function openHostingForm(id) {
         (h.sleeping.preferredGuestTypes || []).forEach(t => { const cb = document.getElementById('hosting-guest-' + t); if (cb) cb.checked = true; });
       }
       if (notesEl) notesEl.value = h.notes || '';
+      const cEl = document.getElementById('hosting-city'); if (cEl) cEl.value = h.city || '';
     }
   } else {
     const evSel = document.getElementById('hosting-event-id');
@@ -7096,6 +7424,7 @@ function submitHostingForm() {
   }
 
   const notes = document.getElementById('hosting-notes')?.value.trim() || '';
+  const city  = document.getElementById('hosting-city')?.value.trim() || '';
 
   const allCombined = [
     ..._firestoreEvents.map(ev => ({ ...ev, date: ev.date?.toDate ? ev.date.toDate() : new Date(ev.date) })),
@@ -7107,7 +7436,7 @@ function submitHostingForm() {
     : null;
 
   const payload = {
-    eventId, familyUnitId, hostingTypes, mealsOffered, sleeping, notes, expiresAt,
+    eventId, familyUnitId, city, hostingTypes, mealsOffered, sleeping, notes, expiresAt,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
 
@@ -7140,63 +7469,11 @@ function cancelHostingAvailability(id) {
     .catch(e => showToast('שגיאה: ' + e.message));
 }
 
-async function loadAdminHostingSection() {
-  if (!isAdmin) return;
-  const el = document.getElementById('hosting-admin-list');
-  if (!el) return;
-  el.innerHTML = `<div class="state-loading">טוען...</div>`;
-  try {
-    const filterEventId = document.getElementById('hosting-admin-event-filter')?.value || '';
-    const snap = await db.collection('hostingAvailability').orderBy('createdAt', 'desc').get();
-    let docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (filterEventId) docs = docs.filter(d => d.eventId === filterEventId);
-
-    if (docs.length === 0) {
-      el.innerHTML = `<div class="state-empty" style="padding:24px 0;text-align:center;color:var(--text-muted)">אין רשומות אירוח</div>`;
-      return;
-    }
-
-    el.innerHTML = docs.map(h => {
-      const fam      = _allFamilies.find(f => f.id === h.familyUnitId);
-      const famLabel = fam ? esc([fam.husband, fam.wife].filter(Boolean).join(' ו')) : esc(h.familyUnitId || '—');
-      const sleepInfo = h.sleeping
-        ? `🛏 ${h.sleeping.availableBeds || 0} מיטות · ${h.sleeping.availableMattresses || 0} מזרנים · עד ${h.sleeping.maxFamilySize || '?'} אנשים${h.sleeping.hasBabyCrib ? ' · 🍼 עריסה' : ''}`
-        : '';
-      const guestFam   = h.matchedGuestFamilyId ? _allFamilies.find(f => f.id === h.matchedGuestFamilyId) : null;
-      const guestLabel = guestFam ? esc([guestFam.husband, guestFam.wife].filter(Boolean).join(' ו')) : '';
-      const dateStr    = h.createdAt?.toDate ? h.createdAt.toDate().toLocaleDateString('he-IL') : '';
-      return `<div class="hosting-admin-row">
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
-            <span style="font-size:14px;font-weight:800;color:var(--brown)">${famLabel}</span>
-            <span class="hosting-status-badge hosting-status-${h.status}">${HOSTING_STATUS_LABELS[h.status] || h.status}</span>
-          </div>
-          <div style="font-size:12px;color:var(--text-mid);margin-bottom:2px">${_hostingTypeLabel(h)}</div>
-          ${sleepInfo  ? `<div style="font-size:12px;color:var(--text-muted)">${sleepInfo}</div>` : ''}
-          ${h.notes    ? `<div style="font-size:12px;color:var(--text-muted);font-style:italic;margin-top:2px">"${esc(h.notes)}"</div>` : ''}
-          ${guestLabel ? `<div style="font-size:12px;color:var(--olive);margin-top:2px">🤝 משויך: ${guestLabel}</div>` : ''}
-          ${h.adminNotes ? `<div style="font-size:12px;color:var(--blue);margin-top:2px">📝 ${esc(h.adminNotes)}</div>` : ''}
-          ${dateStr    ? `<div style="font-size:11px;color:var(--text-muted);margin-top:3px">${dateStr}</div>` : ''}
-        </div>
-        <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
-          ${h.status === 'available' ? `<button class="btn btn-sm btn-primary"  onclick="updateHostingStatus('${h.id}','matched')">🤝 שייך</button>` : ''}
-          ${h.status === 'matched'   ? `<button class="btn btn-sm btn-primary"  onclick="updateHostingStatus('${h.id}','confirmed')">✅ אשר</button>` : ''}
-          ${h.status !== 'cancelled' && h.status !== 'expired'
-            ? `<button class="btn btn-sm btn-outline" style="color:var(--terracotta)" onclick="updateHostingStatus('${h.id}','cancelled')">ביטול</button>` : ''}
-          <button class="btn btn-sm btn-outline" onclick="setAdminHostingNotes('${h.id}')">📝 הערה</button>
-        </div>
-      </div>`;
-    }).join('');
-  } catch (e) {
-    el.innerHTML = `<div style="color:var(--terracotta);font-size:13px">שגיאה: ${esc(e.message)}</div>`;
-  }
-}
-
 function updateHostingStatus(id, status) {
   if (!isAdmin) return;
   db.collection('hostingAvailability').doc(id)
     .update({ status, adminApproved: status === 'confirmed', updatedAt: firebase.firestore.FieldValue.serverTimestamp() })
-    .then(() => { showToast('הסטטוס עודכן ✓'); loadAdminHostingSection(); })
+    .then(() => showToast('הסטטוס עודכן ✓'))
     .catch(e => showToast('שגיאה: ' + e.message));
 }
 
@@ -7207,7 +7484,183 @@ function setAdminHostingNotes(id) {
   if (note === null) return;
   db.collection('hostingAvailability').doc(id)
     .update({ adminNotes: note, updatedAt: firebase.firestore.FieldValue.serverTimestamp() })
-    .then(() => { showToast('ההערה נשמרה ✓'); loadAdminHostingSection(); })
+    .then(() => { showToast('ההערה נשמרה ✓'); renderHostingPage(); })
+    .catch(e => showToast('שגיאה: ' + e.message));
+}
+
+// ── HOSTING PAGE ──────────────────────────────────────────────────────────────
+function renderHostingPage() {
+  if (!currentUser) return;
+
+  const adminEl = document.getElementById('hosting-page-admin');
+  if (adminEl) adminEl.style.display = isAdmin ? '' : 'none';
+
+  const filterEventId = document.getElementById('hosting-page-event-filter')?.value || '';
+
+  const active = _hostingAvailability.filter(h =>
+    h.status !== 'cancelled' && h.status !== 'expired' &&
+    (!filterEventId || h.eventId === filterEventId)
+  );
+
+  // Pending host-approval notifications
+  const approvalsEl = document.getElementById('hosting-page-approvals');
+  if (approvalsEl) {
+    const pending = _hostingAvailability.filter(h =>
+      h.status === 'pending_host_approval' && h.createdByUserId === currentUser.uid &&
+      (!filterEventId || h.eventId === filterEventId)
+    );
+    approvalsEl.innerHTML = pending.map(h => {
+      const gf    = h.matchedGuestFamilyId ? _allFamilies.find(f => f.id === h.matchedGuestFamilyId) : null;
+      const gLbl  = gf ? esc([gf.husband, gf.wife].filter(Boolean).join(' ו')) : '—';
+      const gCnt  = gf ? ((gf.adults || 2) + (gf.kids || 0)) : 0;
+      return `<div class="hosting-approval-banner">
+        <div style="font-size:14px;font-weight:800;color:var(--brown);margin-bottom:6px">⚠️ בקשת אירוח חדשה</div>
+        <div style="font-size:13px;color:var(--text-mid);margin-bottom:8px">${gLbl}${gCnt ? ` · ${gCnt} נפשות` : ''}</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm btn-primary" onclick="approveHostingAsHost('${h.id}')">אשר ✓</button>
+          <button class="btn btn-sm btn-outline" style="color:var(--terracotta)" onclick="rejectHostingAsHost('${h.id}')">דחה</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Available hosts list
+  const listEl    = document.getElementById('hosting-page-list');
+  const available = active.filter(h => h.status === 'available');
+  if (listEl) {
+    if (!available.length) {
+      listEl.innerHTML = `<div class="state-empty" style="padding:24px 0;text-align:center;color:var(--text-muted)">אין משפחות שפתחו אירוח לאירוע זה</div>`;
+    } else {
+      listEl.innerHTML = available.map(h => {
+        const fam      = _allFamilies.find(f => f.id === h.familyUnitId);
+        const famLabel = fam ? esc([fam.husband, fam.wife].filter(Boolean).join(' ו')) : '—';
+        const city     = h.city ? esc(h.city) : '';
+        const sleep    = h.sleeping
+          ? `🛏 ${h.sleeping.availableBeds || 0} מיטות · ${h.sleeping.availableMattresses || 0} מזרנים · עד ${h.sleeping.maxFamilySize || '?'} אנשים${h.sleeping.hasBabyCrib ? ' · 🍼 עריסה' : ''}`
+          : '';
+        const isOwn    = h.createdByUserId === currentUser?.uid;
+        return `<div class="hosting-page-card">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+            <div style="min-width:0">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+                <span style="font-size:15px;font-weight:800;color:var(--brown)">${famLabel}</span>
+                ${city ? `<span style="font-size:13px;color:var(--text-muted)">${city}</span>` : ''}
+                <span class="hosting-status-badge hosting-status-${h.status}">${HOSTING_STATUS_LABELS[h.status] || h.status}</span>
+              </div>
+              <div style="font-size:13px;color:var(--text-mid)${sleep ? ';margin-bottom:3px' : ''}">${_hostingTypeLabel(h)}</div>
+              ${sleep  ? `<div style="font-size:12px;color:var(--text-muted)">${sleep}</div>` : ''}
+              ${h.notes ? `<div style="font-size:12px;color:var(--text-muted);font-style:italic;margin-top:4px">"${esc(h.notes)}"</div>` : ''}
+            </div>
+            ${isOwn ? `<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+              <button class="btn btn-sm btn-outline" onclick="openHostingForm('${h.id}')">✏️ עריכה</button>
+              <button class="btn btn-sm btn-outline" style="color:var(--terracotta)" onclick="cancelHostingAvailability('${h.id}')">ביטול</button>
+            </div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Admin management section — all statuses
+  if (!isAdmin) return;
+  const adminListEl = document.getElementById('hosting-page-admin-list');
+  if (!adminListEl) return;
+  if (!active.length) {
+    adminListEl.innerHTML = `<div class="state-empty" style="padding:24px 0;text-align:center;color:var(--text-muted)">אין רשומות אירוח</div>`;
+    return;
+  }
+  adminListEl.innerHTML = active.map(h => {
+    const fam      = _allFamilies.find(f => f.id === h.familyUnitId);
+    const famLabel = fam ? esc([fam.husband, fam.wife].filter(Boolean).join(' ו')) : esc(h.familyUnitId || '—');
+    const city     = h.city ? esc(h.city) : '';
+    const sleep    = h.sleeping
+      ? `🛏 ${h.sleeping.availableBeds || 0} מיטות · ${h.sleeping.availableMattresses || 0} מזרנים · עד ${h.sleeping.maxFamilySize || '?'} אנשים`
+      : '';
+    const gf       = h.matchedGuestFamilyId ? _allFamilies.find(f => f.id === h.matchedGuestFamilyId) : null;
+    const gLabel   = gf ? esc([gf.husband, gf.wife].filter(Boolean).join(' ו')) : '';
+    return `<div class="hosting-admin-row">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+          <span style="font-size:14px;font-weight:800;color:var(--brown)">${famLabel}</span>
+          ${city ? `<span style="font-size:12px;color:var(--text-muted)">${city}</span>` : ''}
+          <span class="hosting-status-badge hosting-status-${h.status}">${HOSTING_STATUS_LABELS[h.status] || h.status}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-mid);margin-bottom:2px">${_hostingTypeLabel(h)}</div>
+        ${sleep   ? `<div style="font-size:12px;color:var(--text-muted)">${sleep}</div>` : ''}
+        ${h.notes ? `<div style="font-size:12px;color:var(--text-muted);font-style:italic;margin-top:2px">"${esc(h.notes)}"</div>` : ''}
+        ${gLabel  ? `<div style="font-size:12px;color:var(--olive);margin-top:2px">🤝 אורחים: ${gLabel}</div>` : ''}
+        ${h.adminNotes ? `<div style="font-size:12px;color:var(--blue);margin-top:2px">📝 ${esc(h.adminNotes)}</div>` : ''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+        ${h.status === 'available'             ? `<button class="btn btn-sm btn-primary" onclick="openMatchModal('${h.id}')">🤝 התאמת אורחים</button>` : ''}
+        ${h.status === 'pending_host_approval' ? `<button class="btn btn-sm btn-primary" onclick="updateHostingStatus('${h.id}','confirmed')">✅ אשר בכל זאת</button>` : ''}
+        ${h.status === 'matched'               ? `<button class="btn btn-sm btn-primary" onclick="updateHostingStatus('${h.id}','confirmed')">✅ אשר</button>` : ''}
+        ${h.status !== 'cancelled' && h.status !== 'expired'
+          ? `<button class="btn btn-sm btn-outline" style="color:var(--terracotta)" onclick="updateHostingStatus('${h.id}','cancelled')">ביטול</button>` : ''}
+        <button class="btn btn-sm btn-outline" onclick="setAdminHostingNotes('${h.id}')">📝 הערה</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── ADMIN MATCH MODAL ─────────────────────────────────────────────────────────
+function openMatchModal(hostingId) {
+  if (!isAdmin) return;
+  const h = _hostingAvailability.find(x => x.id === hostingId);
+  if (!h) return;
+  const fam = _allFamilies.find(f => f.id === h.familyUnitId);
+  const famLabel = fam ? [fam.husband, fam.wife].filter(Boolean).join(' ו') : '—';
+
+  const titleEl = document.getElementById('match-modal-host-name');
+  if (titleEl) titleEl.textContent = famLabel;
+  const hiddenEl = document.getElementById('match-hosting-id');
+  if (hiddenEl) hiddenEl.value = hostingId;
+
+  const guestSel = document.getElementById('match-guest-family-id');
+  if (guestSel) {
+    const opts = _allFamilies
+      .filter(f => f.id !== h.familyUnitId)
+      .map(f => {
+        const lbl = [f.husband, f.wife].filter(Boolean).join(' ו') || '?';
+        return `<option value="${f.id}">${lbl}</option>`;
+      }).join('');
+    guestSel.innerHTML = `<option value="">-- בחר משפחה --</option>${opts}`;
+    if (h.matchedGuestFamilyId) guestSel.value = h.matchedGuestFamilyId;
+  }
+  openModal('modal-hosting-match');
+}
+
+function submitGuestMatch() {
+  if (!isAdmin) return;
+  const hostingId    = document.getElementById('match-hosting-id')?.value;
+  const guestFamilyId = document.getElementById('match-guest-family-id')?.value;
+  if (!hostingId)    { showToast('שגיאה: לא נמצאה רשומת אירוח'); return; }
+  if (!guestFamilyId){ showToast('נא לבחור משפחת אורחים'); return; }
+  db.collection('hostingAvailability').doc(hostingId)
+    .update({
+      matchedGuestFamilyId: guestFamilyId,
+      status: 'pending_host_approval',
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    })
+    .then(() => { closeModal('modal-hosting-match'); showToast('הוצעה למשפחה המארחת ✓'); })
+    .catch(e => showToast('שגיאה: ' + e.message));
+}
+
+// ── HOST APPROVAL ─────────────────────────────────────────────────────────────
+function approveHostingAsHost(id) {
+  if (!requireAuth()) return;
+  db.collection('hostingAvailability').doc(id)
+    .update({ status: 'confirmed', hostApproved: true, adminApproved: true, updatedAt: firebase.firestore.FieldValue.serverTimestamp() })
+    .then(() => showToast('האירוח אושר! 🎉'))
+    .catch(e => showToast('שגיאה: ' + e.message));
+}
+
+function rejectHostingAsHost(id) {
+  if (!requireAuth()) return;
+  if (!confirm('לדחות את הצעת האירוח? האירוח יחזור לסטטוס פנוי.')) return;
+  db.collection('hostingAvailability').doc(id)
+    .update({ status: 'available', matchedGuestFamilyId: null, updatedAt: firebase.firestore.FieldValue.serverTimestamp() })
+    .then(() => showToast('ההצעה נדחתה — האירוח חזר לסטטוס פנוי'))
     .catch(e => showToast('שגיאה: ' + e.message));
 }
 </script>
