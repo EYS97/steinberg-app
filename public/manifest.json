@@ -1,0 +1,19 @@
+{
+  "name": "Shteinberg App – Family OS",
+  "short_name": "שטיינברג",
+  "description": "הבית הדיגיטלי של משפחת שטיינברג – Family OS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8F6F2",
+  "theme_color": "#8B5E3C",
+  "lang": "he",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/assets/branding/logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
