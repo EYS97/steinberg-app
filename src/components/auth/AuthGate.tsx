@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { AppLogo } from '@/components/ui/AppLogo';
-import { signInWithGoogle } from '@/hooks/useAuth';
+import { signInWithGoogle, signInWithEmail } from '@/hooks/useAuth';
 
 export function LoadingScreen() {
   return (
@@ -21,6 +21,25 @@ export function LoadingScreen() {
 }
 
 export function LoginScreen() {
+  const [showQA, setShowQA] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleEmailLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      await signInWithEmail(email, password);
+    } catch {
+      setError('אימייל או סיסמה שגויים');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-6">
       <motion.div
@@ -37,6 +56,44 @@ export function LoginScreen() {
         <p className="text-xs text-text-muted mt-4">
           גישה מוגבלת לבני המשפחה בלבד
         </p>
+
+        <button
+          type="button"
+          onClick={() => setShowQA(v => !v)}
+          className="mt-6 text-xs text-text-muted/50 hover:text-text-muted transition-colors"
+        >
+          {showQA ? '▲ סגור' : '▼ כניסת QA'}
+        </button>
+
+        {showQA && (
+          <motion.form
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            onSubmit={handleEmailLogin}
+            className="mt-3 flex flex-col gap-2 text-right"
+          >
+            <input
+              type="email"
+              placeholder="אימייל"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
+              required
+            />
+            <input
+              type="password"
+              placeholder="סיסמה"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
+              required
+            />
+            {error && <p className="text-xs text-red-500">{error}</p>}
+            <Button type="submit" variant="outline" size="sm" className="w-full" disabled={loading}>
+              {loading ? 'מתחבר...' : 'כניסה'}
+            </Button>
+          </motion.form>
+        )}
       </motion.div>
     </div>
   );
