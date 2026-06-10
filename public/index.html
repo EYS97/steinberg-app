@@ -1167,6 +1167,257 @@
   @media(min-width:600px){ .dash-skeleton-grid { grid-template-columns: repeat(4,1fr); } }
   .dash-skel-card { height: 78px; border-radius: var(--radius-sm); }
   .dash-skel-row  { height: 56px; border-radius: var(--radius-sm); margin-bottom: 10px; }
+
+  /* ===== HOSTING AVAILABILITY ===== */
+  .hosting-status-badge { display:inline-flex; align-items:center; padding:3px 10px; border-radius:99px; font-size:11px; font-weight:700; }
+  .hosting-status-draft     { background:var(--brown-bg);      color:var(--brown); }
+  .hosting-status-available { background:var(--olive-bg);      color:var(--olive); }
+  .hosting-status-matched   { background:var(--blue-bg);       color:var(--blue); }
+  .hosting-status-confirmed { background:var(--gold-bg);       color:var(--gold); }
+  .hosting-status-cancelled { background:var(--terracotta-bg); color:var(--terracotta); }
+  .hosting-status-expired   { background:var(--brown-bg);      color:var(--text-muted); }
+  .hosting-admin-row { display:flex; align-items:flex-start; gap:10px; padding:14px 0; border-bottom:1px solid var(--brown-pale); }
+  .hosting-admin-row:last-child { border-bottom:none; }
+  .hosting-cond-section { display:none; margin-top:10px; padding:12px; background:var(--cream); border-radius:var(--radius-sm); border:1px solid var(--brown-pale); }
+  .hosting-cond-section.visible { display:block; }
+  .hosting-check-row { display:flex; align-items:center; gap:8px; padding:5px 0; font-size:14px; color:var(--text-mid); cursor:pointer; user-select:none; }
+  .hosting-check-row input[type=checkbox] { width:16px; height:16px; accent-color:var(--brown); cursor:pointer; flex-shrink:0; }
+
+  /* ═══════════════════════════════════════════════════════
+     WARM FAMILY DASHBOARD — Design System v3
+     Premium · Warm · Family-Oriented
+     ═══════════════════════════════════════════════════════ */
+
+  /* ── Token extensions ── */
+  :root {
+    --radius-md:   16px;
+    --radius-lg:   24px;
+    --radius-hero: 32px;
+
+    --shadow-1: 0 2px 8px  rgba(107,76,53,0.06);
+    --shadow-2: 0 8px 24px rgba(107,76,53,0.10);
+    --shadow-3: 0 16px 40px rgba(107,76,53,0.12);
+
+    --success: #6E9A5B;
+    --warning: #D4A546;
+    --error:   #C4614A;
+    --info:    #6B8CAF;
+
+    --sp-xs:  4px;  --sp-sm:  8px;  --sp-md:  12px;
+    --sp-lg:  16px; --sp-xl:  24px; --sp-2xl: 32px; --sp-3xl: 48px;
+  }
+
+  /* ── Cards: 24 px radius + level-1 shadow ── */
+  .card {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-1);
+    transition: box-shadow 0.20s ease;
+  }
+  .card:not(.card-zero-pad):hover { box-shadow: var(--shadow-2); }
+
+  /* Hero card: 32 px ── */
+  #home-hero-card { border-radius: var(--radius-hero); overflow: hidden; }
+
+  /* ── Stat chip ── */
+  .stat-chip { border-radius: var(--radius-lg); box-shadow: var(--shadow-1); }
+
+  /* ── Dash stat ── */
+  .dash-stat { border-radius: var(--radius-lg); box-shadow: var(--shadow-1); }
+
+  /* ── Room + Family cards ── */
+  .room-card  { border-radius: var(--radius-lg); }
+  .room-card:hover  { box-shadow: var(--shadow-2); }
+  .family-card { border-radius: var(--radius-lg); }
+  .family-card:hover { box-shadow: var(--shadow-2); }
+
+  /* ── Event picker ── */
+  .event-picker { border-radius: var(--radius-lg); box-shadow: var(--shadow-1); }
+  .event-picker-icon {
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, var(--gold-bg), var(--cream));
+    border: 1px solid var(--gold-light);
+  }
+
+  /* ── Buttons: 48 px height, 16 px radius ── */
+  .btn {
+    height: 48px;
+    border-radius: var(--radius-md);
+    padding: 0 20px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.1px;
+  }
+  .btn-sm {
+    height: 36px;
+    padding: 0 14px;
+    font-size: 13px;
+    border-radius: var(--radius-sm);
+  }
+  /* Olive = secondary per spec */
+  .btn-secondary { background: var(--olive); color: white; border: none; }
+  .btn-secondary:hover { background: var(--olive-light); }
+  .btn-green { background: var(--olive); color: white; border: none; }
+  .btn-green:hover { background: var(--olive-light); }
+
+  /* ── Forms: 48 px height, 16 px radius, olive focus ring ── */
+  .form-input, .form-select {
+    height: 48px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+  }
+  .form-input:focus, .form-select:focus {
+    border-color: var(--olive);
+    box-shadow: 0 0 0 2px rgba(122,140,92,0.18);
+  }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--text-mid); margin-bottom: 6px; }
+
+  /* ── Modals: 28 px radius, 560 px max-width, 32 px padding ── */
+  .modal {
+    border-radius: 28px;
+    max-width: 560px;
+    padding: 32px;
+  }
+  .modal-overlay { background: rgba(44,26,14,0.50); }
+
+  /* ── Toast: warm brown, roomier ── */
+  .toast {
+    background: var(--brown);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 14px 24px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-2);
+  }
+
+  /* ── Typography upgrades ── */
+  .section-title { font-size: 24px; font-weight: 700; }
+  .home-page-header .section-title { font-size: 26px; }
+  .modal-title { font-size: 20px; font-weight: 800; margin-bottom: 24px; }
+
+  /* ── Status chips per spec ── */
+  .badge-available { background: var(--olive-bg);      color: var(--olive); }
+  .badge-booked    { background: var(--brown-bg);      color: var(--brown); }
+  .badge-pending   { background: var(--gold-bg);       color: var(--gold);  }
+  .badge-locked    { background: var(--terracotta-bg); color: var(--terracotta); }
+  .badge-confirmed { background: var(--olive-bg);      color: var(--olive); }
+  .badge-expired   { background: var(--brown-bg);      color: var(--text-muted); }
+
+  /* ── Quick actions: taller cards, 3-col grid on mobile ── */
+  .qa-btn {
+    border-radius: var(--radius-lg);
+    min-height: 80px;
+    padding: 14px var(--sp-2);
+  }
+  @media (max-width: 520px) {
+    .quick-actions { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .qa-btn { min-width: unset; flex: unset; }
+  }
+
+  /* ── Announcements: gold accent dot ── */
+  .ann-dot { background: var(--gold); }
+  #home-announcements .card { border-left: 3px solid var(--gold); }
+
+  /* ── Hero header band: warm gradient ── */
+  #home-hero-header {
+    background: linear-gradient(135deg, var(--gold-bg) 0%, rgba(250,247,242,0.6) 100%) !important;
+  }
+
+  /* ── Tabs: pill style ── */
+  .tabs { border-radius: var(--radius-sm); }
+  .tab-btn.active { border-radius: var(--radius-sm); }
+
+  /* ── Calendar: rounder day cells ── */
+  .cal-day { border-radius: var(--radius-sm); }
+
+  /* ── Card section hover ── */
+  .card-section { transition: background 0.15s; }
+  .card-section:hover { background: rgba(242,235,227,0.25); }
+
+  /* ── Login screen: warm gradient ── */
+  .login-gate {
+    background: linear-gradient(160deg, var(--cream) 0%, var(--brown-bg) 100%);
+  }
+
+  /* ── Header: subtle bottom shadow ── */
+  .header { box-shadow: 0 1px 12px rgba(107,76,53,0.06); }
+
+  /* ── Page transition: warm fade ── */
+  @keyframes warmFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .page.active { animation: warmFadeIn 0.20s ease; }
+
+  /* ── Focus rings: olive ── */
+  :focus-visible {
+    outline: 2px solid var(--olive);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+
+  /* ════════════════════════════════════════════════════
+     MOBILE BOTTOM NAVIGATION
+     5 items: בית · חדרים · סעודות · אירועים · משפחה
+     ════════════════════════════════════════════════════ */
+
+  /* Hide on desktop */
+  .bottom-nav { display: none; }
+
+  @media (max-width: 640px) {
+    /* Suppress top scrollable nav */
+    .nav { display: none !important; }
+
+    /* Room for the fixed bottom bar */
+    .main { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+
+    /* Bottom bar shell */
+    .bottom-nav {
+      display: flex;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(255,253,249,0.97);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -4px 24px rgba(107,76,53,0.10);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      z-index: 100;
+    }
+
+    /* Each button */
+    .bottom-nav-btn {
+      flex: 1;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 3px; padding: 10px 4px;
+      background: none; border: none;
+      cursor: pointer;
+      font-family: 'Heebo', sans-serif;
+      color: var(--text-muted);
+      transition: color 0.15s;
+      min-height: 56px;
+      position: relative;
+    }
+    .bottom-nav-btn .bn-icon  { font-size: 20px; line-height: 1; display: block; }
+    .bottom-nav-btn .bn-label { font-size: 10px; font-weight: 600; line-height: 1; white-space: nowrap; }
+
+    /* Active state */
+    .bottom-nav-btn.active { color: var(--brown); }
+    .bottom-nav-btn.active::before {
+      content: '';
+      position: absolute; top: 0;
+      width: 32px; height: 3px;
+      background: var(--brown);
+      border-radius: 0 0 3px 3px;
+    }
+
+    /* Alert dot */
+    .bottom-nav-btn .nav-alert-dot {
+      position: absolute;
+      top: 8px; right: calc(50% - 14px);
+      width: 7px; height: 7px;
+    }
+  }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
@@ -1204,7 +1455,26 @@
   <button class="nav-btn nav-secondary" onclick="showPage('tree',this)" aria-label="עץ משפחתי">🌳<span class="nav-label">עץ</span></button>
   <button class="nav-btn nav-secondary" onclick="showPage('guide',this)" aria-label="מדריך">📖<span class="nav-label">מדריך</span></button>
   <button class="nav-btn nav-secondary" onclick="showPage('notifications',this)" aria-label="התראות">🔔<span class="nav-label">התראות</span></button>
-  <button class="nav-btn nav-secondary" id="nav-dashboard" style="display:none" onclick="showPage('dashboard',this);loadDashboard()" aria-label="דשבורד">📊<span class="nav-label">דשבורד</span><span id="dash-nav-badge" class="nav-alert-dot" style="display:none"></span></button>
+  <button class="nav-btn nav-secondary" id="nav-dashboard" style="display:none" onclick="showPage('dashboard',this);loadDashboard();loadAdminHostingSection()" aria-label="דשבורד">📊<span class="nav-label">דשבורד</span><span id="dash-nav-badge" class="nav-alert-dot" style="display:none"></span></button>
+</nav>
+
+<!-- MOBILE BOTTOM NAVIGATION (visible on ≤640 px only via CSS) -->
+<nav class="bottom-nav" aria-label="ניווט תחתון">
+  <button class="bottom-nav-btn active" onclick="showPage('home',this)" aria-label="בית">
+    <span class="bn-icon">🏠</span><span class="bn-label">בית</span>
+  </button>
+  <button class="bottom-nav-btn" onclick="showPage('rooms',this)" aria-label="חדרים">
+    <span class="bn-icon">🛏</span><span class="bn-label">חדרים</span>
+  </button>
+  <button class="bottom-nav-btn" onclick="showPage('food',this)" aria-label="סעודות">
+    <span class="bn-icon">🍽</span><span class="bn-label">סעודות</span>
+  </button>
+  <button class="bottom-nav-btn" onclick="showPage('calendar',this)" aria-label="אירועים">
+    <span class="bn-icon">📅</span><span class="bn-label">אירועים</span>
+  </button>
+  <button class="bottom-nav-btn" onclick="showPage('family',this)" aria-label="משפחה">
+    <span class="bn-icon">👨‍👩‍👧‍👦</span><span class="bn-label">משפחה</span>
+  </button>
 </nav>
 
 <!-- MAIN -->
@@ -1235,6 +1505,9 @@
       </button>
       <button class="qa-btn" onclick="navTo('notifications')">
         <span class="qa-icon">📱</span><span class="qa-label">דוח לאמא</span>
+      </button>
+      <button class="qa-btn" onclick="openHostingForm()">
+        <span class="qa-icon">🏡</span><span class="qa-label">אני רוצה לארח</span>
       </button>
     </div>
 
@@ -1314,6 +1587,23 @@
       <div class="card">
         <div class="card-title" id="home-meal-event-title">🍽 סיכום סועדים</div>
         <div id="home-meal-rows"></div>
+      </div>
+    </div>
+
+    <!-- hosting availability card -->
+    <div id="home-hosting-card" style="margin-bottom:16px;display:none">
+      <div class="card card-zero-pad" style="overflow:hidden">
+        <div style="background:var(--blue-bg);border-bottom:1.5px solid rgba(74,124,158,0.3);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <div style="min-width:0">
+            <div style="font-size:15px;font-weight:800;color:var(--blue)">🏡 אירוח פנוי</div>
+            <div id="hosting-home-count" style="font-size:12px;color:var(--text-muted);margin-top:2px"></div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+            <button class="btn btn-sm btn-primary" onclick="openHostingForm()">אני רוצה לארח</button>
+            <button id="hosting-admin-btn" class="btn btn-sm btn-outline" style="display:none" onclick="navTo('dashboard');setTimeout(()=>{const s=document.getElementById('hosting-admin-section');if(s)s.scrollIntoView({behavior:'smooth'})},450)">ניהול אירוחים</button>
+          </div>
+        </div>
+        <div id="hosting-home-list" style="padding:12px 18px"></div>
       </div>
     </div>
 
@@ -1652,12 +1942,106 @@
         <div class="skeleton dash-skel-card"></div>
       </div>
     </div>
+
+    <!-- Hosting management (admin only) -->
+    <div id="hosting-admin-section" style="margin-top:20px">
+      <div class="section-header" style="margin-bottom:12px">
+        <div class="section-title">🏡 ניהול אירוחים</div>
+        <button class="btn btn-sm btn-outline" onclick="loadAdminHostingSection()">🔄 רענן</button>
+      </div>
+      <div class="card">
+        <div class="form-group" style="margin-bottom:12px">
+          <label class="form-label">סנן לפי אירוע</label>
+          <select id="hosting-admin-event-filter" class="form-select event-select" onchange="loadAdminHostingSection()"></select>
+        </div>
+        <div id="hosting-admin-list">
+          <div class="state-loading">טוען...</div>
+        </div>
+      </div>
+    </div>
   </div>
 
 </main>
 </div>
 
 <!-- ===== MODALS ===== -->
+
+<!-- Hosting Availability Form -->
+<div class="modal-overlay" id="modal-hosting-form">
+  <div class="modal">
+    <div class="modal-title" id="hosting-modal-title">🏡 הצהרת זמינות אירוח</div>
+
+    <div class="form-group">
+      <label class="form-label">שבת / חג <span style="color:var(--terracotta)">*</span></label>
+      <select id="hosting-event-id" class="form-select event-select"></select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">משפחה מארחת <span style="color:var(--terracotta)">*</span></label>
+      <select id="hosting-family-id" class="form-select family-select"></select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">סוג אירוח <span style="color:var(--terracotta)">*</span></label>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px">
+        <label class="hosting-check-row"><input type="checkbox" id="hosting-type-meal" onchange="updateHostingConditionals()"> 🍽 סעודה בלבד</label>
+        <label class="hosting-check-row"><input type="checkbox" id="hosting-type-sleep" onchange="updateHostingConditionals()"> 🛏 לינה בלבד</label>
+        <label class="hosting-check-row"><input type="checkbox" id="hosting-type-full" onchange="updateHostingConditionals()"> ✡️ שבת/חג מלא כולל לינה</label>
+      </div>
+    </div>
+
+    <!-- Conditional: meals -->
+    <div id="hosting-meals-section" class="hosting-cond-section">
+      <div style="font-size:13px;font-weight:700;color:var(--text-mid);margin-bottom:6px">🍽 סעודות מוצעות <span style="color:var(--terracotta)">*</span></div>
+      <label class="hosting-check-row"><input type="checkbox" id="hosting-meal-friday"> סעודת ליל שבת / ערב חג</label>
+      <label class="hosting-check-row"><input type="checkbox" id="hosting-meal-shabbatlunch"> סעודת שבת / חג בבוקר</label>
+      <label class="hosting-check-row"><input type="checkbox" id="hosting-meal-third"> סעודה שלישית</label>
+    </div>
+
+    <!-- Conditional: sleeping -->
+    <div id="hosting-sleep-section" class="hosting-cond-section">
+      <div style="font-size:13px;font-weight:700;color:var(--text-mid);margin-bottom:8px">🛏 פרטי לינה</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">מיטות פנויות</label>
+          <input type="number" id="hosting-beds" class="form-input" min="0" value="0" style="text-align:center">
+        </div>
+        <div class="form-group">
+          <label class="form-label">מזרנים</label>
+          <input type="number" id="hosting-mattresses" class="form-input" min="0" value="0" style="text-align:center">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">גודל משפחה מקסימלי <span style="color:var(--terracotta)">*</span></label>
+          <input type="number" id="hosting-max-family" class="form-input" min="1" placeholder="מספר אנשים">
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:6px">
+          <label class="hosting-check-row"><input type="checkbox" id="hosting-crib"> 🍼 עריסת תינוק</label>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:4px">
+        <label class="form-label">סוג אורחים מועדף</label>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">
+          <label class="hosting-check-row"><input type="checkbox" id="hosting-guest-couple" value="couple"> זוג</label>
+          <label class="hosting-check-row"><input type="checkbox" id="hosting-guest-family" value="family"> משפחה עם ילדים</label>
+          <label class="hosting-check-row"><input type="checkbox" id="hosting-guest-singles" value="singles"> יחידים</label>
+          <label class="hosting-check-row"><input type="checkbox" id="hosting-guest-flexible" value="flexible" checked> גמיש</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top:10px">
+      <label class="form-label">הערות נוספות</label>
+      <textarea id="hosting-notes" class="form-input" rows="2" style="resize:none" placeholder="לדוגמה: מתאים למשפחה עם ילדים קטנים, אפשר לארח עד 10 אנשים..."></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-hosting-form')">ביטול</button>
+      <button class="btn btn-primary" id="hosting-submit-btn" onclick="submitHostingForm()">🏡 הוסף זמינות אירוח</button>
+    </div>
+  </div>
+</div>
 
 <!-- Login / Switch User -->
 <div class="modal-overlay" id="modal-login">
@@ -2329,11 +2713,110 @@
     <button class="tour-close" onclick="closeTour()">✕</button>
     <div class="tour-progress-track"><div class="tour-progress-bar" id="tour-bar"></div></div>
 
-    <!-- Slide 1: טאבים לשבת + חג -->
+    <!-- Slide 1: עיצוב חדש -->
     <div class="tour-slide active" id="tour-slide-0">
+      <span class="tour-big-icon">✨</span>
+      <div class="tour-title ta">אפליקציה חדשה — אותה משפחה</div>
+      <div class="tour-usecase ta">עיצבנו מחדש את כל האפליקציה — כרטיסים מרווחים יותר, צבעים נעימים, ניווט מהיר יותר בנייד. הכל עובד בדיוק כמו קודם, רק יפה יותר</div>
+      <div class="tour-mockup ta" style="padding:0;overflow:hidden;border-radius:10px;border:1.5px solid var(--gold-light)">
+        <div style="background:var(--brown);padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:13px;font-weight:800;color:#fff">🏡 משפחת שטיינברג</div>
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--brown)">א</div>
+        </div>
+        <div style="background:var(--warm-white);padding:10px 12px;display:flex;gap:6px">
+          <div style="flex:1;background:#fff;border-radius:10px;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);text-align:center">
+            <div style="font-size:18px">🛏</div>
+            <div style="font-size:9px;font-weight:700;color:var(--brown);margin-top:3px">חדרים</div>
+          </div>
+          <div style="flex:1;background:#fff;border-radius:10px;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);text-align:center">
+            <div style="font-size:18px">🍽</div>
+            <div style="font-size:9px;font-weight:700;color:var(--brown);margin-top:3px">סעודות</div>
+          </div>
+          <div style="flex:1;background:#fff;border-radius:10px;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);text-align:center">
+            <div style="font-size:18px">🌳</div>
+            <div style="font-size:9px;font-weight:700;color:var(--brown);margin-top:3px">עץ</div>
+          </div>
+          <div style="flex:1;background:#fff;border-radius:10px;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);text-align:center">
+            <div style="font-size:18px">📅</div>
+            <div style="font-size:9px;font-weight:700;color:var(--brown);margin-top:3px">לוח</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 2: עץ משפחה -->
+    <div class="tour-slide" id="tour-slide-1">
+      <span class="tour-big-icon">🌳</span>
+      <div class="tour-title ta">עץ משפחה — כל הדורות במקום אחד</div>
+      <div class="tour-usecase ta">לחצו על הלשונית 🌳 ותראו את עץ המשפחה — זוגות, ילדים, שנות לידה ומדינות מוצא. ניתן לגלול, להגדיל ולחצות על כל כרטיס לפרטים נוספים</div>
+      <div class="tour-mockup ta" style="direction:rtl">
+        <div style="display:flex;justify-content:center;gap:8px;margin-bottom:6px">
+          <div style="background:var(--cream);border:1.5px solid var(--gold-light);border-radius:10px;padding:7px 10px;text-align:center;min-width:72px">
+            <div style="width:28px;height:28px;border-radius:50%;background:#7BA7C9;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff">ש</div>
+            <div style="font-size:9px;font-weight:800;color:var(--brown);line-height:1.3">שעיה שטיינברג</div>
+            <div style="font-size:8px;color:var(--text-muted)">1895 – 1942</div>
+          </div>
+          <div style="background:var(--cream);border:1.5px dashed var(--gold-light);border-radius:10px;padding:7px 10px;text-align:center;min-width:72px">
+            <div style="width:28px;height:28px;border-radius:50%;background:#C97B9E;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff">ש</div>
+            <div style="font-size:9px;font-weight:800;color:var(--brown);line-height:1.3">שרה שטיינברג</div>
+            <div style="font-size:8px;color:var(--text-muted)">1898 – 1973</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:center"><div style="width:1.5px;height:10px;background:var(--gold-light)"></div></div>
+        <div style="display:flex;justify-content:center;gap:6px">
+          <div style="background:var(--cream);border:1.5px solid var(--gold-light);border-radius:8px;padding:5px 8px;text-align:center;min-width:58px">
+            <div style="width:22px;height:22px;border-radius:50%;background:#C97B9E;margin:0 auto 3px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff">א</div>
+            <div style="font-size:8px;font-weight:700;color:var(--brown)">אסתר</div>
+          </div>
+          <div style="background:var(--cream);border:1.5px solid var(--gold-light);border-radius:8px;padding:5px 8px;text-align:center;min-width:58px">
+            <div style="width:22px;height:22px;border-radius:50%;background:#7BA7C9;margin:0 auto 3px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff">מ</div>
+            <div style="font-size:8px;font-weight:700;color:var(--brown)">משה</div>
+          </div>
+          <div style="background:var(--cream);border:1.5px solid var(--gold-light);border-radius:8px;padding:5px 8px;text-align:center;min-width:58px">
+            <div style="width:22px;height:22px;border-radius:50%;background:#7BA7C9;margin:0 auto 3px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff">א</div>
+            <div style="font-size:8px;font-weight:700;color:var(--brown)">אבה</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 3: אורח קבוע -->
+    <div class="tour-slide" id="tour-slide-2">
+      <span class="tour-big-icon">⭐</span>
+      <div class="tour-title ta">אורח קבוע — לא צריך לרשום כל שבת</div>
+      <div class="tour-usecase ta">מי שמגיע כמעט כל שבת? מסמנים אותו כ"אורח קבוע" ⭐ — והוא יופיע אוטומטית בספירת הסועדים בכל שבת וחג, בלי לרשום מחדש כל פעם</div>
+      <div class="tour-mockup ta">
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:6px">👥 אורחים קבועים</div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="background:var(--gold-bg);border:1.5px solid var(--gold-light);border-radius:8px;padding:7px 10px;display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:7px">
+              <span style="font-size:14px">⭐</span>
+              <div>
+                <div style="font-size:11px;font-weight:700;color:var(--brown)">סבא משה</div>
+                <div style="font-size:9px;color:var(--text-muted)">נספר בכל שבת אוטומטית</div>
+              </div>
+            </div>
+            <div style="background:var(--gold);border-radius:6px;padding:3px 7px;font-size:9px;font-weight:700;color:#fff">קבוע</div>
+          </div>
+          <div style="background:var(--gold-bg);border:1.5px solid var(--gold-light);border-radius:8px;padding:7px 10px;display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:7px">
+              <span style="font-size:14px">⭐</span>
+              <div>
+                <div style="font-size:11px;font-weight:700;color:var(--brown)">דודה חנה</div>
+                <div style="font-size:9px;color:var(--text-muted)">נספר בכל שבת אוטומטית</div>
+              </div>
+            </div>
+            <div style="background:var(--gold);border-radius:6px;padding:3px 7px;font-size:9px;font-weight:700;color:#fff">קבוע</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 4: שבת וחג -->
+    <div class="tour-slide" id="tour-slide-3">
       <span class="tour-big-icon">🗂️</span>
       <div class="tour-title ta">שבת וחג באותו שבוע? טאבים!</div>
-      <div class="tour-usecase ta">כשיש שני אירועים או יותר בשבוע — שבועות ושבת למשל — מופיעה שורת טאבים בראש הכרטיס. לוחצים על כל טאב ורואים את החדרים, הנרות והסעודות של אותו אירוע בדיוק</div>
+      <div class="tour-usecase ta">כשיש שני אירועים בשבוע — שבועות ושבת למשל — מופיעה שורת טאבים. לוחצים על כל טאב ורואים את החדרים, הנרות והסעודות של אותו אירוע</div>
       <div class="tour-mockup ta" style="padding:0;overflow:hidden;border-radius:10px;border:1.5px solid var(--brown-pale)">
         <div style="display:flex;border-bottom:1.5px solid var(--brown-pale);background:var(--warm-white)">
           <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:9px 6px;border-left:1px solid var(--brown-pale);font-size:12px;font-weight:700;color:var(--brown);position:relative">
@@ -2369,94 +2852,34 @@
       </div>
     </div>
 
-    <!-- Slide 2: אירועים משפחתיים -->
-    <div class="tour-slide" id="tour-slide-1">
-      <span class="tour-big-icon">🎉</span>
-      <div class="tour-title ta">ימי הולדת וברית — רישום פשוט</div>
-      <div class="tour-usecase ta">לאירועים משפחתיים (לא שבת/חג) יש עכשיו רישום מהיר — בוחרים משפחה, כמה מגיעים, ואם מביאים משהו. בלי סעודות, בלי קטגוריות</div>
-      <div class="tour-mockup ta">
-        <div style="font-size:11px;font-weight:700;color:var(--text-mid);margin-bottom:8px">🎉 מי מגיע?</div>
-        <div style="display:flex;gap:6px;margin-bottom:8px">
-          <div style="flex:1;padding:6px 8px;border-radius:8px;border:1.5px solid var(--border);font-size:11px;font-weight:600;color:var(--brown)">👨‍👩‍👧 ישראל ושרה</div>
-          <div style="padding:6px 10px;border-radius:8px;border:1.5px solid var(--border);font-size:11px;color:var(--text-muted)">5 נפשות</div>
-        </div>
-        <div style="background:var(--blue-bg);border:1.5px solid var(--blue);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:10px">
-          <div style="font-size:11px;font-weight:700;color:var(--blue)">🎁 מביאים:</div>
-          <div style="font-size:11px;color:var(--brown)">עוגת שוקולד</div>
-        </div>
-        <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px">
-          <div style="background:var(--blue-bg);border:1.5px solid var(--blue);border-radius:7px;padding:4px 8px;font-size:11px;color:var(--brown);font-weight:600">👨‍👩‍👧 ישראל ושרה (5)</div>
-          <div style="background:var(--blue-bg);border:1.5px solid var(--blue);border-radius:7px;padding:4px 8px;font-size:11px;color:var(--brown);font-weight:600">👤 אורח (2)</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Slide 3: ספירת נרות -->
-    <div class="tour-slide" id="tour-slide-2">
-      <span class="tour-big-icon">🕯</span>
-      <div class="tour-title ta">ספירת נרות שבת אוטומטית</div>
-      <div class="tour-usecase ta">הדף הבית מחשב כמה נרות ידלקו השבת — אמא תמיד 10, ולכל משפחה נשואה שמזמינה חדר מוסיפים 2 נרות ועוד נר לכל ילד</div>
-      <div class="tour-mockup ta">
-        <div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:8px;letter-spacing:.5px">🕯 נרות שבת</div>
-        <div style="display:flex;align-items:center;gap:12px">
-          <div style="font-size:24px;letter-spacing:3px">🕯🕯🕯🕯🕯🕯🕯🕯🕯🕯🕯🕯</div>
-        </div>
-        <div style="margin-top:8px">
-          <div style="font-size:17px;font-weight:800;color:var(--brown)">18 נרות</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">אמא: 10 · ישראל ושרה: 4 · יעקב ושרה: 4</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Slide 4: אירוע קרוב בדף הבית -->
-    <div class="tour-slide" id="tour-slide-3">
-      <span class="tour-big-icon">📌</span>
-      <div class="tour-title ta">אירוע משפחתי קרוב — כרטיס נפרד</div>
-      <div class="tour-usecase ta">אם יש ברית, יום הולדת או אירוע אחר באותה תקופה — הוא מופיע כרטיס כחול מתחת לכרטיס השבת, כדי שלא יפספס</div>
-      <div class="tour-mockup ta" style="padding:0;overflow:hidden;border-radius:10px;border:1.5px solid var(--blue)">
-        <div style="background:var(--blue-bg);padding:10px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--blue)">
-          <div style="background:var(--blue);border-radius:8px;padding:5px 9px;color:#fff;text-align:center;min-width:36px">
-            <div style="font-size:15px;font-weight:800;line-height:1">28</div>
-            <div style="font-size:9px;font-weight:600">מאי</div>
-          </div>
-          <div style="flex:1">
-            <div style="font-size:13px;font-weight:800;color:var(--blue)">🎉 ברית מילה — בן של חנה</div>
-            <div style="font-size:10px;color:var(--text-muted)">בעוד 11 ימים</div>
-          </div>
-        </div>
-        <div style="padding:8px 12px;display:flex;flex-wrap:wrap;gap:5px">
-          <div style="background:var(--blue-bg);border:1.5px solid var(--blue);border-radius:7px;padding:4px 8px;font-size:11px;color:var(--blue);font-weight:600">👨‍👩‍👧 יהודה ורחל (4)</div>
-          <div style="background:var(--blue-bg);border:1.5px solid var(--blue);border-radius:7px;padding:4px 8px;font-size:11px;color:var(--blue);font-weight:600">👤 אורח (3)</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Slide 5: דשבורד מנהל -->
+    <!-- Slide 5: ימי הולדת וזיכרון -->
     <div class="tour-slide" id="tour-slide-4">
-      <span class="tour-big-icon">📊</span>
-      <div class="tour-title ta">דשבורד מנהל — מי משתמש?</div>
-      <div class="tour-usecase ta">מנהלי המערכת יכולים לראות כמה אנשים פעילים, מתי משתמשים הכי הרבה, וכמה הזמנות ורישומים נעשו — הכל בדשבורד ייעודי</div>
-      <div class="tour-mockup ta">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
-          <div style="background:var(--gold-bg);border:1.5px solid var(--gold-light);border-radius:8px;padding:8px;text-align:center">
-            <div style="font-size:9px;font-weight:700;color:var(--text-muted)">משתמשים רשומים</div>
-            <div style="font-size:22px;font-weight:800;color:var(--brown)">19</div>
-          </div>
-          <div style="background:var(--olive-bg);border:1.5px solid var(--olive-light);border-radius:8px;padding:8px;text-align:center">
-            <div style="font-size:9px;font-weight:700;color:var(--text-muted)">פעילים ב-30 יום</div>
-            <div style="font-size:22px;font-weight:800;color:var(--olive)">12</div>
+      <span class="tour-big-icon">🎂</span>
+      <div class="tour-title ta">ימי הולדת וזיכרון — לא יפספסו</div>
+      <div class="tour-usecase ta">לוח השנה מסמן אוטומטית ימי הולדת וימי זיכרון של בני המשפחה. שבוע לפני — שולחים ברכה בוואטסאפ ישירות מהאפליקציה</div>
+      <div class="tour-mockup ta" style="padding:0;overflow:hidden;border-radius:10px;border:1.5px solid var(--brown-pale)">
+        <div style="background:var(--warm-white);padding:8px 12px;border-bottom:1px solid var(--brown-pale);display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:11px;font-weight:700;color:var(--brown)">יוני 2026</div>
+          <div style="display:flex;gap:3px">
+            <div style="width:22px;height:22px;border-radius:50%;background:var(--terracotta);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff">9</div>
+            <div style="width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff">15</div>
+            <div style="width:22px;height:22px;border-radius:4px;background:var(--gold-bg);border:1px solid var(--gold-light);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:var(--brown)">22</div>
           </div>
         </div>
-        <div style="background:var(--cream);border-radius:8px;padding:8px">
-          <div style="font-size:10px;font-weight:700;color:var(--text-mid);margin-bottom:6px">פעולות לפי יום</div>
-          <div style="display:flex;align-items:flex-end;gap:3px;height:28px">
-            <div style="flex:1;background:var(--gold-light);border-radius:2px;height:40%"></div>
-            <div style="flex:1;background:var(--gold-light);border-radius:2px;height:60%"></div>
-            <div style="flex:1;background:var(--gold);border-radius:2px;height:100%"></div>
-            <div style="flex:1;background:var(--gold-light);border-radius:2px;height:45%"></div>
-            <div style="flex:1;background:var(--gold-light);border-radius:2px;height:30%"></div>
-            <div style="flex:1;background:var(--gold-light);border-radius:2px;height:70%"></div>
-            <div style="flex:1;background:var(--gold-light);border-radius:2px;height:20%"></div>
+        <div style="padding:8px 12px;display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;align-items:center;gap:8px;background:var(--terracotta-bg);border-radius:8px;padding:6px 9px">
+            <span style="font-size:14px">🎂</span>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--brown)">יום הולדת — נועה</div>
+              <div style="font-size:9px;color:var(--text-muted)">9 ביוני · היום!</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;background:var(--blue-bg);border-radius:8px;padding:6px 9px">
+            <span style="font-size:14px">🕯</span>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--brown)">יום זיכרון — שעיה ז״ל</div>
+              <div style="font-size:9px;color:var(--text-muted)">15 ביוני · בעוד 6 ימים</div>
+            </div>
           </div>
         </div>
       </div>
@@ -2860,6 +3283,7 @@ function loadAll() {
   loadClosedEvents();
   loadFamilyTree();
   loadAnnouncements();
+  loadHostingAvailability();
 }
 
 // ── FAMILIES ──────────────────────────────────────────────
@@ -5533,11 +5957,17 @@ function tourGo(n)    { _showTourSlide(n); }
 // Nav
 function showPage(id, btn) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  // Clear active on BOTH top nav and bottom nav
+  document.querySelectorAll('.nav-btn, .bottom-nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
+  // Sync the counterpart nav (top↔bottom) by matching the page id in onclick
+  const pageRef = "'" + id + "'";
+  document.querySelectorAll('.nav-btn, .bottom-nav-btn').forEach(b => {
+    if (b !== btn && (b.getAttribute('onclick')||'').includes(pageRef)) b.classList.add('active');
+  });
   if (id === 'tree') {
-_treeScale = 0.3;
+    _treeScale = 0.3;
     _treePan = { x: 20, y: 20 };
     _applyTreeTransform();
     scheduleTreeFit();
@@ -6457,6 +6887,328 @@ function navTo(pageId) {
   const btn = [...document.querySelectorAll('.nav-btn')]
     .find(b => (b.getAttribute('onclick') || '').includes("'" + pageId + "'"));
   if (btn) btn.click();
+}
+
+// ── HOSTING AVAILABILITY ─────────────────────────────────────────────────────
+let _hostingAvailability = [];
+let _editingHostingId    = null;
+
+const HOSTING_STATUS_LABELS = {
+  draft: 'טיוטה', available: 'פנוי', matched: 'שויך',
+  confirmed: 'אושר', cancelled: 'בוטל', expired: 'פג תוקף'
+};
+
+function loadHostingAvailability() {
+  _unsubscribers.push(
+    db.collection('hostingAvailability').orderBy('createdAt', 'desc').onSnapshot(snap => {
+      _hostingAvailability = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      _autoExpireHosting();
+      renderHomeHostingCard();
+    }, () => {})
+  );
+}
+
+function _autoExpireHosting() {
+  const now = Date.now();
+  _hostingAvailability.forEach(h => {
+    if (h.status === 'available' && h.expiresAt && h.expiresAt.toDate && h.expiresAt.toDate() < now) {
+      db.collection('hostingAvailability').doc(h.id)
+        .update({ status: 'expired', updatedAt: firebase.firestore.FieldValue.serverTimestamp() })
+        .catch(() => {});
+    }
+  });
+}
+
+function renderHomeHostingCard() {
+  const card = document.getElementById('home-hosting-card');
+  if (!card) return;
+  card.style.display = '';
+
+  const adminBtn = document.getElementById('hosting-admin-btn');
+  if (adminBtn) adminBtn.style.display = isAdmin ? '' : 'none';
+
+  const eventId = _activeFocusEvent ? _activeFocusEvent.id : null;
+  const active  = _hostingAvailability.filter(h =>
+    h.status !== 'cancelled' && h.status !== 'expired' &&
+    (!eventId || h.eventId === eventId)
+  );
+
+  const countEl = document.getElementById('hosting-home-count');
+  const listEl  = document.getElementById('hosting-home-list');
+
+  if (active.length === 0) {
+    if (countEl) countEl.textContent = eventId ? 'עדיין אין משפחות שפתחו אירוח לאירוע הזה' : '';
+    if (listEl)  listEl.innerHTML = '';
+    return;
+  }
+
+  if (countEl) countEl.textContent = `${active.length} משפחות מוכנות לארח`;
+
+  if (!isAdmin) {
+    const mine = currentUser ? active.filter(h => h.createdByUserId === currentUser.uid) : [];
+    if (listEl) listEl.innerHTML = mine.length === 0
+      ? `<div style="font-size:13px;color:var(--text-muted)">לא פתחת זמינות אירוח לאירוע הזה עדיין.</div>`
+      : mine.map(h => _renderMyHostingRow(h)).join('');
+    return;
+  }
+
+  if (listEl) {
+    const shown = active.slice(0, 4);
+    listEl.innerHTML = shown.map(h => {
+      const fam   = _allFamilies.find(f => f.id === h.familyUnitId);
+      const label = fam ? esc([fam.husband, fam.wife].filter(Boolean).join(' ו')) : '—';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--brown-pale)">
+        <span style="font-size:13px;font-weight:700;color:var(--brown)">${label}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:12px;color:var(--text-muted)">${_hostingTypeLabel(h)}</span>
+          <span class="hosting-status-badge hosting-status-${h.status}">${HOSTING_STATUS_LABELS[h.status] || h.status}</span>
+        </div>
+      </div>`;
+    }).join('') + (active.length > 4 ? `<div style="font-size:12px;color:var(--text-muted);margin-top:6px">ועוד ${active.length - 4} נוספות...</div>` : '');
+  }
+}
+
+function _renderMyHostingRow(h) {
+  return `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:6px 0;font-size:13px">
+    <div>
+      <div style="color:var(--text-mid);font-weight:600">${_hostingTypeLabel(h)}</div>
+      ${h.notes ? `<div style="color:var(--text-muted);font-size:12px;margin-top:2px">${esc(h.notes)}</div>` : ''}
+    </div>
+    <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
+      <span class="hosting-status-badge hosting-status-${h.status}">${HOSTING_STATUS_LABELS[h.status] || h.status}</span>
+      <button class="btn btn-sm btn-outline" onclick="openHostingForm('${h.id}')">✏️</button>
+      <button class="btn btn-sm btn-outline" style="color:var(--terracotta)" onclick="cancelHostingAvailability('${h.id}')">✕</button>
+    </div>
+  </div>`;
+}
+
+function _hostingTypeLabel(h) {
+  const types = h.hostingTypes || [];
+  const parts = [];
+  if (types.includes('full'))       parts.push('שבת/חג מלא');
+  else {
+    if (types.includes('meal'))  parts.push('סעודה');
+    if (types.includes('sleep')) parts.push('לינה');
+  }
+  if (h.mealsOffered && h.mealsOffered.length) {
+    const map = { fridayDinner: 'ליל שבת', shabbatLunch: 'בוקר', seudahShlishit: 'סעודה שלישית' };
+    parts.push('(' + h.mealsOffered.map(m => map[m] || m).join(', ') + ')');
+  }
+  return parts.join(' · ') || '—';
+}
+
+function openHostingForm(id) {
+  if (!requireAuth()) return;
+  _editingHostingId = id || null;
+
+  const titleEl  = document.getElementById('hosting-modal-title');
+  const submitEl = document.getElementById('hosting-submit-btn');
+  if (titleEl)  titleEl.textContent  = id ? '🏡 עריכת זמינות אירוח' : '🏡 הצהרת זמינות אירוח';
+  if (submitEl) submitEl.textContent = id ? '💾 שמור שינויים' : '🏡 הוסף זמינות אירוח';
+
+  ['hosting-type-meal','hosting-type-sleep','hosting-type-full',
+   'hosting-meal-friday','hosting-meal-shabbatlunch','hosting-meal-third',
+   'hosting-crib','hosting-guest-couple','hosting-guest-family','hosting-guest-singles'
+  ].forEach(cbId => { const el = document.getElementById(cbId); if (el) el.checked = false; });
+  const flexCb = document.getElementById('hosting-guest-flexible');
+  if (flexCb) flexCb.checked = true;
+  ['hosting-beds','hosting-mattresses'].forEach(fId => { const el = document.getElementById(fId); if (el) el.value = 0; });
+  const maxEl   = document.getElementById('hosting-max-family'); if (maxEl)   maxEl.value   = '';
+  const notesEl = document.getElementById('hosting-notes');      if (notesEl) notesEl.value = '';
+
+  if (id) {
+    const h = _hostingAvailability.find(x => x.id === id);
+    if (h) {
+      const evSel = document.getElementById('hosting-event-id');  if (evSel)  evSel.value  = h.eventId || '';
+      const fSel  = document.getElementById('hosting-family-id'); if (fSel)   fSel.value   = h.familyUnitId || '';
+      (h.hostingTypes || []).forEach(t => { const cb = document.getElementById('hosting-type-' + t); if (cb) cb.checked = true; });
+      const mealMap = { fridayDinner: 'hosting-meal-friday', shabbatLunch: 'hosting-meal-shabbatlunch', seudahShlishit: 'hosting-meal-third' };
+      (h.mealsOffered || []).forEach(m => { const cb = document.getElementById(mealMap[m]); if (cb) cb.checked = true; });
+      if (h.sleeping) {
+        const bedsEl = document.getElementById('hosting-beds');       if (bedsEl) bedsEl.value   = h.sleeping.availableBeds || 0;
+        const matsEl = document.getElementById('hosting-mattresses'); if (matsEl) matsEl.value   = h.sleeping.availableMattresses || 0;
+        const cribEl = document.getElementById('hosting-crib');       if (cribEl) cribEl.checked = !!h.sleeping.hasBabyCrib;
+        const mfEl   = document.getElementById('hosting-max-family'); if (mfEl)   mfEl.value     = h.sleeping.maxFamilySize || '';
+        (h.sleeping.preferredGuestTypes || []).forEach(t => { const cb = document.getElementById('hosting-guest-' + t); if (cb) cb.checked = true; });
+      }
+      if (notesEl) notesEl.value = h.notes || '';
+    }
+  } else {
+    const evSel = document.getElementById('hosting-event-id');
+    if (evSel && _activeFocusEvent) evSel.value = _activeFocusEvent.id;
+    if (_allFamilies.length === 1) {
+      const fSel = document.getElementById('hosting-family-id');
+      if (fSel) fSel.value = _allFamilies[0].id;
+    }
+  }
+
+  updateHostingConditionals();
+  openModal('modal-hosting-form');
+}
+
+function updateHostingConditionals() {
+  const hasMeal  = !!document.getElementById('hosting-type-meal')?.checked;
+  const hasSleep = !!document.getElementById('hosting-type-sleep')?.checked;
+  const hasFull  = !!document.getElementById('hosting-type-full')?.checked;
+  const mealsSec = document.getElementById('hosting-meals-section');
+  const sleepSec = document.getElementById('hosting-sleep-section');
+  if (mealsSec) mealsSec.classList.toggle('visible', hasMeal || hasFull);
+  if (sleepSec) sleepSec.classList.toggle('visible', hasSleep || hasFull);
+}
+
+function submitHostingForm() {
+  if (!requireAuth()) return;
+  const eventId      = document.getElementById('hosting-event-id')?.value;
+  const familyUnitId = document.getElementById('hosting-family-id')?.value;
+  if (!eventId)      { showToast('נא לבחור שבת או חג'); return; }
+  if (!familyUnitId) { showToast('נא לבחור משפחה'); return; }
+
+  const typeMeal  = !!document.getElementById('hosting-type-meal')?.checked;
+  const typeSleep = !!document.getElementById('hosting-type-sleep')?.checked;
+  const typeFull  = !!document.getElementById('hosting-type-full')?.checked;
+  const hostingTypes = [typeMeal && 'meal', typeSleep && 'sleep', typeFull && 'full'].filter(Boolean);
+  if (!hostingTypes.length) { showToast('נא לבחור לפחות סוג אירוח אחד'); return; }
+
+  const showMeals = typeMeal || typeFull;
+  const showSleep = typeSleep || typeFull;
+
+  let mealsOffered = [];
+  if (showMeals) {
+    if (document.getElementById('hosting-meal-friday')?.checked)       mealsOffered.push('fridayDinner');
+    if (document.getElementById('hosting-meal-shabbatlunch')?.checked) mealsOffered.push('shabbatLunch');
+    if (document.getElementById('hosting-meal-third')?.checked)        mealsOffered.push('seudahShlishit');
+    if (!mealsOffered.length) { showToast('נא לבחור לפחות סעודה אחת'); return; }
+  }
+
+  let sleeping = null;
+  if (showSleep) {
+    const maxFamilySize = parseInt(document.getElementById('hosting-max-family')?.value) || 0;
+    if (!maxFamilySize) { showToast('נא לציין גודל משפחה מקסימלי'); return; }
+    sleeping = {
+      availableBeds:       parseInt(document.getElementById('hosting-beds')?.value) || 0,
+      availableMattresses: parseInt(document.getElementById('hosting-mattresses')?.value) || 0,
+      hasBabyCrib:         !!document.getElementById('hosting-crib')?.checked,
+      maxFamilySize,
+      preferredGuestTypes: ['couple','family','singles','flexible'].filter(t =>
+        document.getElementById('hosting-guest-' + t)?.checked
+      )
+    };
+  }
+
+  const notes = document.getElementById('hosting-notes')?.value.trim() || '';
+
+  const allCombined = [
+    ..._firestoreEvents.map(ev => ({ ...ev, date: ev.date?.toDate ? ev.date.toDate() : new Date(ev.date) })),
+    ...getUpcomingShabbatot(16)
+  ];
+  const evObj     = allCombined.find(ev => ev.id === eventId);
+  const expiresAt = evObj
+    ? (() => { const d = new Date(evObj.date); d.setDate(d.getDate() + 2); return d; })()
+    : null;
+
+  const payload = {
+    eventId, familyUnitId, hostingTypes, mealsOffered, sleeping, notes, expiresAt,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  if (_editingHostingId) {
+    db.collection('hostingAvailability').doc(_editingHostingId).update(payload)
+      .then(() => { closeModal('modal-hosting-form'); showToast('האירוח עודכן בהצלחה ✓'); _editingHostingId = null; })
+      .catch(e => showToast('שגיאה: ' + e.message));
+  } else {
+    db.collection('hostingAvailability').add({
+      ...payload,
+      createdByUserId: currentUser.uid,
+      status: 'available',
+      hostApproved: true,
+      adminApproved: false,
+      matchedGuestFamilyId: null,
+      adminNotes: '',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    })
+      .then(() => { closeModal('modal-hosting-form'); showToast('האירוח נוסף בהצלחה! 🏡'); })
+      .catch(e => showToast('שגיאה: ' + e.message));
+  }
+}
+
+function cancelHostingAvailability(id) {
+  if (!requireAuth()) return;
+  if (!confirm('לבטל את זמינות האירוח?')) return;
+  db.collection('hostingAvailability').doc(id)
+    .update({ status: 'cancelled', updatedAt: firebase.firestore.FieldValue.serverTimestamp() })
+    .then(() => showToast('האירוח בוטל'))
+    .catch(e => showToast('שגיאה: ' + e.message));
+}
+
+async function loadAdminHostingSection() {
+  if (!isAdmin) return;
+  const el = document.getElementById('hosting-admin-list');
+  if (!el) return;
+  el.innerHTML = `<div class="state-loading">טוען...</div>`;
+  try {
+    const filterEventId = document.getElementById('hosting-admin-event-filter')?.value || '';
+    const snap = await db.collection('hostingAvailability').orderBy('createdAt', 'desc').get();
+    let docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (filterEventId) docs = docs.filter(d => d.eventId === filterEventId);
+
+    if (docs.length === 0) {
+      el.innerHTML = `<div class="state-empty" style="padding:24px 0;text-align:center;color:var(--text-muted)">אין רשומות אירוח</div>`;
+      return;
+    }
+
+    el.innerHTML = docs.map(h => {
+      const fam      = _allFamilies.find(f => f.id === h.familyUnitId);
+      const famLabel = fam ? esc([fam.husband, fam.wife].filter(Boolean).join(' ו')) : esc(h.familyUnitId || '—');
+      const sleepInfo = h.sleeping
+        ? `🛏 ${h.sleeping.availableBeds || 0} מיטות · ${h.sleeping.availableMattresses || 0} מזרנים · עד ${h.sleeping.maxFamilySize || '?'} אנשים${h.sleeping.hasBabyCrib ? ' · 🍼 עריסה' : ''}`
+        : '';
+      const guestFam   = h.matchedGuestFamilyId ? _allFamilies.find(f => f.id === h.matchedGuestFamilyId) : null;
+      const guestLabel = guestFam ? esc([guestFam.husband, guestFam.wife].filter(Boolean).join(' ו')) : '';
+      const dateStr    = h.createdAt?.toDate ? h.createdAt.toDate().toLocaleDateString('he-IL') : '';
+      return `<div class="hosting-admin-row">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:14px;font-weight:800;color:var(--brown)">${famLabel}</span>
+            <span class="hosting-status-badge hosting-status-${h.status}">${HOSTING_STATUS_LABELS[h.status] || h.status}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-mid);margin-bottom:2px">${_hostingTypeLabel(h)}</div>
+          ${sleepInfo  ? `<div style="font-size:12px;color:var(--text-muted)">${sleepInfo}</div>` : ''}
+          ${h.notes    ? `<div style="font-size:12px;color:var(--text-muted);font-style:italic;margin-top:2px">"${esc(h.notes)}"</div>` : ''}
+          ${guestLabel ? `<div style="font-size:12px;color:var(--olive);margin-top:2px">🤝 משויך: ${guestLabel}</div>` : ''}
+          ${h.adminNotes ? `<div style="font-size:12px;color:var(--blue);margin-top:2px">📝 ${esc(h.adminNotes)}</div>` : ''}
+          ${dateStr    ? `<div style="font-size:11px;color:var(--text-muted);margin-top:3px">${dateStr}</div>` : ''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+          ${h.status === 'available' ? `<button class="btn btn-sm btn-primary"  onclick="updateHostingStatus('${h.id}','matched')">🤝 שייך</button>` : ''}
+          ${h.status === 'matched'   ? `<button class="btn btn-sm btn-primary"  onclick="updateHostingStatus('${h.id}','confirmed')">✅ אשר</button>` : ''}
+          ${h.status !== 'cancelled' && h.status !== 'expired'
+            ? `<button class="btn btn-sm btn-outline" style="color:var(--terracotta)" onclick="updateHostingStatus('${h.id}','cancelled')">ביטול</button>` : ''}
+          <button class="btn btn-sm btn-outline" onclick="setAdminHostingNotes('${h.id}')">📝 הערה</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = `<div style="color:var(--terracotta);font-size:13px">שגיאה: ${esc(e.message)}</div>`;
+  }
+}
+
+function updateHostingStatus(id, status) {
+  if (!isAdmin) return;
+  db.collection('hostingAvailability').doc(id)
+    .update({ status, adminApproved: status === 'confirmed', updatedAt: firebase.firestore.FieldValue.serverTimestamp() })
+    .then(() => { showToast('הסטטוס עודכן ✓'); loadAdminHostingSection(); })
+    .catch(e => showToast('שגיאה: ' + e.message));
+}
+
+function setAdminHostingNotes(id) {
+  const h    = _hostingAvailability.find(x => x.id === id);
+  const prev = h ? (h.adminNotes || '') : '';
+  const note = prompt('הערת מנהל:', prev);
+  if (note === null) return;
+  db.collection('hostingAvailability').doc(id)
+    .update({ adminNotes: note, updatedAt: firebase.firestore.FieldValue.serverTimestamp() })
+    .then(() => { showToast('ההערה נשמרה ✓'); loadAdminHostingSection(); })
+    .catch(e => showToast('שגיאה: ' + e.message));
 }
 </script>
 </body>
