@@ -1,4 +1,5 @@
 import type { Timestamp } from 'firebase/firestore';
+import type { CalendarType, HebrewDateParts } from '@/lib/dates';
 
 // ── Auth ──────────────────────────────────────────────────────────────────
 export interface AppUser {
@@ -68,6 +69,19 @@ export interface AppEvent {
   type: EventType;
   notes: string;
   createdAt?: Timestamp;
+  /** Parasha name for auto-generated Shabbat events (no "פרשת" prefix) */
+  parasha?: string;
+  /** True for client-generated events (Shabbatot, Hebcal holidays) — not stored in Firestore */
+  auto?: boolean;
+  isHoliday?: boolean;
+  /** Which calendar the user anchored this event to (default gregorian) */
+  calendarType?: CalendarType;
+  /** Original Hebrew date when calendarType is 'hebrew' */
+  hebrewDate?: HebrewDateParts;
+  /** Set when the event repeats annually; determines which calendar drives recurrence */
+  recurrenceCalendar?: CalendarType;
+  /** For expanded occurrences of recurring events: the Firestore doc id of the source event */
+  sourceId?: string;
 }
 
 // ── Food ──────────────────────────────────────────────────────────────────
@@ -104,9 +118,13 @@ export interface Guest {
 export interface Birthday {
   id: string;
   name: string;
+  /** Gregorian "MM-DD" / "YYYY-MM-DD" (legacy docs may hold a Firestore Timestamp) */
   date: string;
   notes?: string;
-  hebrewDate?: string;
+  /** Structured Hebrew date; legacy docs may hold a free-text string */
+  hebrewDate?: HebrewDateParts | string;
+  /** Which calendar the annual recurrence follows (default gregorian) */
+  calendarType?: CalendarType;
   createdAt?: Timestamp;
 }
 
@@ -114,8 +132,12 @@ export interface Birthday {
 export interface Memorial {
   id: string;
   name: string;
+  /** Gregorian "MM-DD" / "YYYY-MM-DD" (legacy docs may hold a Firestore Timestamp) */
   date: string;
-  hebrewDate?: string;
+  /** Structured Hebrew date; legacy docs may hold a free-text string */
+  hebrewDate?: HebrewDateParts | string;
+  /** Which calendar the annual recurrence follows (default hebrew for yahrzeits) */
+  calendarType?: CalendarType;
   notes?: string;
   createdAt?: Timestamp;
 }

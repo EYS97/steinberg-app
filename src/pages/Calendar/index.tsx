@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useEvents } from '@/hooks/useEvents';
 import { useBirthdays } from '@/hooks/useBirthdays';
 import { useMemorials } from '@/hooks/useMemorials';
+import { useAllBookings } from '@/hooks/useBookings';
 import { useToast } from '@/components/ui/Toast';
 import type { EventType } from '@/types';
 import type { User } from 'firebase/auth';
@@ -45,11 +46,12 @@ function parseDateToMonthDay(date: unknown): [number, number] | null {
 const HE_DAYS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 const HE_MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
 
-type ViewMode = 'month' | 'agenda';
+type ViewMode = 'month' | 'agenda' | 'history';
 
 export function Calendar({ user, isAdmin }: CalendarProps) {
   const { showToast } = useToast();
   const { data: events, loading } = useEvents();
+  const { bookings } = useAllBookings();
   const { data: birthdays } = useBirthdays();
   const { data: memorials } = useMemorials();
 
@@ -112,6 +114,17 @@ export function Calendar({ user, isAdmin }: CalendarProps) {
       .slice(0, 30);
     return all;
   }, [events]);
+
+  // History: past events that had room bookings, newest first
+  const historyItems = useMemo(() => {
+    const t = new Date(); t.setHours(0, 0, 0, 0);
+    return events
+      .map(e => ({ ...e, _date: e.date?.toDate?.() }))
+      .filter((e): e is typeof e & { _date: Date } => !!e._date && e._date < t)
+      .map(e => ({ ...e, _bookings: bookings.filter(b => b.eventId === e.id) }))
+      .filter(e => e._bookings.length > 0)
+      .sort((a, b) => b._date.getTime() - a._date.getTime());
+  }, [events, bookings]);
 
   async function handleAdd() {
     if (!form.title.trim()) { showToast('נא להזין כותרת', 'error'); return; }
@@ -178,6 +191,12 @@ export function Calendar({ user, isAdmin }: CalendarProps) {
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${view === 'agenda' ? 'bg-accent text-white' : 'text-text-muted hover:bg-surface-alt'}`}
             >
               רשימה
+            </button>
+            <button
+              onClick={() => setView('history')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${view === 'history' ? 'bg-accent text-white' : 'text-text-muted hover:bg-surface-alt'}`}
+            >
+              📜 היסטוריה
             </button>
           </div>
 
@@ -258,6 +277,56 @@ export function Calendar({ user, isAdmin }: CalendarProps) {
               ))}
             </div>
           </>
+        ) : view === 'history' ? (
+          /* History view — past events with their room bookings */
+          historyItems.length === 0 ? (
+            <EmptyState icon="📜" title="אין פעילות מוקלטת עדיין" />
+          ) : (
+            <div className="space-y-2">
+              {historyItems.map(ev => {
+                const totalPax = ev._bookings.reduce((s, b) => s + (b.adults || 0) + (b.kids || 0), 0);
+                const type = EVENT_TYPES.find(t => t.value === ev.type);
+                return (
+                  <div
+                    key={ev.id}
+                    className="flex items-center gap-3 p-3 bg-surface-alt rounded-md border border-border"
+                  >
+                    <div
+                      className="w-11 h-11 rounded-md flex flex-col items-center justify-center shrink-0 text-white"
+                      style={{ background: type?.color || '#C49A3C' }}
+                    >
+                      <span className="text-base font-extrabold leading-none">{ev._date.getDate()}</span>
+                      <span className="text-[9px] font-semibold">
+                        {ev._date.toLocaleDateString('he-IL', { month: 'short' })}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-text-base truncate">
+                        {type?.icon} {ev.title}
+                      </p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {ev._bookings.map(b => {
+                          const pax = (b.adults || 0) + (b.kids || 0);
+                          return (
+                            <span
+                              key={b.id}
+                              className="text-[11px] font-semibold text-primary bg-primary/10 border border-primary/20 rounded px-1.5 py-0.5"
+                            >
+                              {b.familyName}{pax ? ` (${pax})` : ''}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="text-center shrink-0">
+                      <div className="text-lg font-extrabold text-accent">{totalPax}</div>
+                      <div className="text-[9px] text-text-muted">אורחים</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )
         ) : (
           /* Agenda view */
           agendaItems.length === 0 ? (
@@ -282,7 +351,7 @@ export function Calendar({ user, isAdmin }: CalendarProps) {
                       <p className="text-xs text-text-muted">{ev._date.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
                     </div>
                     <Badge variant="default">{type?.label}</Badge>
-                    {isAdmin && (
+                    {isAdmin && !ev.auto && (
                       <button
                         onClick={() => handleDelete(ev.id)}
                         className="p-1.5 text-text-muted hover:text-error transition-colors rounded"

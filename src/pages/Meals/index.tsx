@@ -24,6 +24,22 @@ interface MealsProps {
 
 const CATEGORIES: FoodCategory[] = ['מנות ראשונות', 'עיקריות', 'קינוחים', 'שתייה', 'כללי'];
 const MEAL_TYPES: MealType[] = ['ליל שישי', 'צהריים שבת'];
+
+// Normalize legacy category/meal-type names written by the old vanilla-JS app
+const CAT_NORM: Record<string, string> = {
+  'מנה ראשונה': 'מנות ראשונות', 'מנות ראשונות': 'מנות ראשונות',
+  'מנה עיקרית': 'עיקריות',      'עיקריות': 'עיקריות',
+  'קינוח': 'קינוחים',           'קינוחים': 'קינוחים',
+  'שתייה': 'שתייה',
+  'לחם / חלות': 'כללי', 'ממתקים / פירות': 'כללי', 'אחר': 'כללי', 'כללי': 'כללי',
+};
+const MEAL_NORM: Record<string, string> = {
+  'ליל שבת': 'ליל שישי',   'ליל שישי': 'ליל שישי',   'ליל חג': 'ליל שישי',
+  'סעודת שבת': 'צהריים שבת', 'צהריים שבת': 'צהריים שבת', 'סעודת חג': 'צהריים שבת',
+  'סעודה שלישית': 'ערב שבת', 'ערב שבת': 'ערב שבת',
+};
+const normCat  = (c: string) => CAT_NORM[c]  ?? c ?? 'כללי';
+const normMeal = (m: string) => MEAL_NORM[m] ?? m ?? 'ליל שישי';
 const CATEGORY_ICONS: Record<string, string> = {
   'מנות ראשונות': '🥗',
   'עיקריות':      '🍲',
@@ -71,15 +87,23 @@ export function Meals({ user, isAdmin }: MealsProps) {
     return DEFAULT_DINERS + total;
   }, [guests, eventId]);
 
-  // Group food by meal type then category
+  // Group food by meal type then category (handles both old and new naming)
   const grouped = useMemo(() => {
     const byMeal: Record<string, Record<string, typeof eventFood>> = {};
-    MEAL_TYPES.forEach(mt => {
-      byMeal[mt] = {};
-      CATEGORIES.forEach(cat => {
-        const items = eventFood.filter(f => f.mealType === mt && f.category === cat);
-        if (items.length) byMeal[mt][cat] = items;
-      });
+    // Seed all known meal types
+    [...MEAL_TYPES, 'ערב שבת'].forEach(mt => { byMeal[mt] = {}; });
+    eventFood.forEach(f => {
+      const mt  = normMeal(f.mealType || '');
+      const cat = normCat(f.category || '');
+      if (!byMeal[mt]) byMeal[mt] = {};
+      if (!byMeal[mt][cat]) byMeal[mt][cat] = [];
+      byMeal[mt][cat].push(f);
+    });
+    // Remove empty meal buckets (except the primary two)
+    Object.keys(byMeal).forEach(mt => {
+      if (!MEAL_TYPES.includes(mt as MealType) && !Object.keys(byMeal[mt]).length) {
+        delete byMeal[mt];
+      }
     });
     return byMeal;
   }, [eventFood]);

@@ -56,22 +56,40 @@ export function relativeDate(date: Date): string {
   return formatDateShort(date);
 }
 
-export function isoToHeDate(iso: string): string {
-  if (!iso || typeof iso !== 'string') return '';
-  const [, m, d] = iso.split('-').map(Number);
-  const now = new Date();
-  const date = new Date(now.getFullYear(), m - 1, d);
-  if (date < now) date.setFullYear(now.getFullYear() + 1);
-  return formatDate(date);
+// Normalise a birthday/memorial date to a JS Date (month+day only, next occurrence).
+// Accepts: ISO string "YYYY-MM-DD", Firestore Timestamp (has .toDate()), or plain Date.
+function normaliseBdayDate(input: unknown): Date | null {
+  if (!input) return null;
+  let base: Date | null = null;
+  if (typeof input === 'string') {
+    const parts = input.split('-').map(Number);
+    const m = parts[parts.length - 2];
+    const d = parts[parts.length - 1];
+    if (!m || !d) return null;
+    base = new Date(new Date().getFullYear(), m - 1, d);
+  } else if (typeof (input as any).toDate === 'function') {
+    base = (input as any).toDate() as Date;
+  } else if (input instanceof Date) {
+    base = input;
+  } else {
+    return null;
+  }
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const occ = new Date(now.getFullYear(), base.getMonth(), base.getDate());
+  if (occ < now) occ.setFullYear(now.getFullYear() + 1);
+  return occ;
 }
 
-export function daysUntil(dateStr: string): number {
-  if (!dateStr || typeof dateStr !== 'string') return 999;
-  const [, m, d] = dateStr.split('-').map(Number);
-  const now = new Date();
-  const target = new Date(now.getFullYear(), m - 1, d);
-  if (target < now) target.setFullYear(now.getFullYear() + 1);
-  return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+export function isoToHeDate(iso: unknown): string {
+  const d = normaliseBdayDate(iso);
+  return d ? formatDate(d) : '';
+}
+
+export function daysUntil(dateInput: unknown): number {
+  const d = normaliseBdayDate(dateInput);
+  if (!d) return 999;
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  return Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 export function familyDisplayName(family: { husband: string; wife: string }): string {
