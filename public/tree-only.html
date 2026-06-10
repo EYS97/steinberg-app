@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>עץ משפחת שטיינברג</title>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+<style>
+  :root {
+    --primary:     #8B5E3C;
+    --primary-lt:  #A67550;
+    --primary-bg:  #F2EBE3;
+    --primary-pale:#E8DDD4;
+    --accent:      #0EA5A4;
+    --accent-bg:   #E6F7F7;
+    --bg:          #F8F6F2;
+    --surface:     #FFFFFF;
+    --surface-alt: #F7F4EF;
+    --gold:        #C49A3C;
+    --gold-light:  #E8C876;
+    --gold-bg:     #FBF4E3;
+    --text:        #1C1C1E;
+    --text-mid:    #4B3828;
+    --text-muted:  #9B7B65;
+    --border:      #E0D5CB;
+    --error:       #C4614A;
+    --shadow-sm:   0 1px 6px rgba(139,94,60,0.08);
+    --shadow:      0 2px 16px rgba(139,94,60,0.12);
+    --shadow-md:   0 4px 24px rgba(139,94,60,0.14);
+    --shadow-lg:   0 8px 40px rgba(139,94,60,0.20);
+    --radius:      16px;
+    --radius-sm:   10px;
+    --radius-btn:  8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%; overflow: hidden;
+    font-family: 'Rubik', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    direction: rtl;
+  }
+
+  /* ── Login / Pending Gates ─────────────────────────────── */
+  .gate {
+    position: fixed; inset: 0; z-index: 500;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .gate.hidden { display: none; }
+  .gate-box {
+    text-align: center; padding: 32px 24px; max-width: 360px;
+    background: var(--surface); border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+  }
+  .gate-icon { font-size: 64px; margin-bottom: 16px; display: block; }
+  .gate-title { font-size: 22px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+  .gate-sub   { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.6; }
+
+  /* ── Buttons ───────────────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: 'Rubik', sans-serif; font-size: 14px; font-weight: 600;
+    padding: 10px 20px; border-radius: var(--radius-btn);
+    cursor: pointer; border: none; transition: all 0.15s; line-height: 1.2;
+  }
+  .btn-primary {
+    background: var(--primary); color: #fff;
+  }
+  .btn-primary:hover { background: var(--primary-lt); }
+  .btn-accent {
+    background: var(--accent); color: #fff;
+  }
+  .btn-accent:hover { filter: brightness(1.08); }
+  .btn-outline {
+    background: transparent; border: 1.5px solid var(--border); color: var(--text-mid);
+  }
+  .btn-outline:hover { background: var(--primary-bg); }
+  .btn-sm { padding: 7px 14px; font-size: 13px; border-radius: 8px; }
+  .btn-danger { color: var(--error); }
+
+  /* ── Toast ─────────────────────────────────────────────── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--text); color: #fff; padding: 12px 22px;
+    border-radius: 99px; font-size: 14px; font-weight: 500;
+    z-index: 9999; opacity: 0; transition: opacity 0.2s;
+    pointer-events: none; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ── Modal ─────────────────────────────────────────────── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(28,20,10,0.45);
+    z-index: 400; display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border-radius: var(--radius);
+    padding: 28px; width: 100%; max-width: 480px;
+    box-shadow: var(--shadow-lg);
+    animation: slideUp 0.2s ease;
+    max-height: 90vh; overflow-y: auto;
+  }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .modal-title { font-size: 20px; font-weight: 700; color: var(--primary); margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+  /* ── Forms ─────────────────────────────────────────────── */
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--text-mid); margin-bottom: 4px; display: block; }
+  .form-input, .form-select {
+    width: 100%; padding: 10px 13px; border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); font-family: 'Rubik', sans-serif;
+    font-size: 14px; color: var(--text); background: var(--surface);
+    outline: none; transition: border 0.15s; direction: rtl;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--accent); }
+
+  /* ── Tree viewport ─────────────────────────────────────── */
+  .tree-wrap {
+    width: 100%; height: 100vh;
+    background: var(--surface-alt); overflow: hidden;
+    position: relative; cursor: grab;
+  }
+  .tree-wrap.grabbing { cursor: grabbing; }
+  .tree-svg-layer { position: absolute; top:0; left:0; transform-origin: 0 0; pointer-events: none; z-index: 1; }
+  .tree-canvas    { position: absolute; top:0; left:0; transform-origin: 0 0; z-index: 2; }
+  .tree-svg { position: absolute; top:0; left:0; overflow: visible; }
+  .tree-connector       { stroke: rgba(28,28,30,0.16); stroke-width: 1.5; fill: none; }
+  .tree-connector-spine { stroke: var(--accent); stroke-width: 2.5; fill: none; opacity: 0.55; }
+
+  /* Person card — Family OS style */
+  .tree-card {
+    position: absolute; width: 140px; z-index: 2; overflow: hidden;
+    background: var(--surface);
+    border: 1.5px solid rgba(28,28,30,0.08); border-radius: 18px; padding: 11px 11px 9px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    transition: transform 0.18s cubic-bezier(0.16,1,0.3,1), box-shadow 0.18s ease, opacity 0.25s ease;
+    font-family: 'Rubik', sans-serif;
+  }
+  .tree-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.11), 0 0 0 2px var(--accent);
+    border-color: transparent;
+  }
+  .tree-card.spine { border-right: 3px solid var(--accent); }
+  .tree-card.spine .tc-photo { border-color: var(--accent); }
+  .tree-card.tc-dim { opacity: 0.15; pointer-events: none; }
+  .tree-card.tc-focused {
+    box-shadow: 0 8px 32px rgba(14,165,164,0.22), 0 0 0 2.5px var(--accent);
+    border-color: transparent; transform: translateY(-2px);
+  }
+  .tree-card.deceased { opacity: 0.65; filter: saturate(0.55) brightness(0.95); }
+  .tree-card.in-law { border-style: dashed; border-color: rgba(28,28,30,0.12); background: #FAFAFA; }
+
+  /* Avatar circle */
+  .tc-photo {
+    width: 44px; height: 44px; border-radius: 50%; object-fit: cover;
+    border: 2.5px solid var(--primary-pale); margin: 0 auto 8px; display: block;
+    background: var(--primary-bg);
+    font-size: 15px; line-height: 39px; text-align: center;
+    color: var(--primary); font-weight: 700;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.09);
+  }
+  .tree-card .tc-name   { font-size: 12px; font-weight: 700; color: var(--text); text-align: center; line-height: 1.3; }
+  .tree-card .tc-maiden { font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 1px; }
+  .tree-card .tc-years  { font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 4px; font-weight: 500; letter-spacing: 0.2px; }
+  .tree-card .tc-city   { font-size: 9px; color: var(--text-muted); text-align: center; margin-top: 2px; opacity: 0.75; }
+  .tree-card .tc-story-icon { position:absolute; top:6px; left:8px; font-size:9px; opacity:0.4; }
+
+  /* Breadcrumb */
+  .tree-breadcrumb {
+    position: absolute; top: 0; right: 0; left: 0; z-index: 5;
+    font-size: 13px; padding: 10px 18px;
+    display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+    background: rgba(248,246,242,0.90); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  .tree-breadcrumb.visible { opacity: 1; pointer-events: auto; }
+  .tree-breadcrumb-item { color: var(--primary); font-weight: 600; cursor: pointer; transition: color 0.15s; }
+  .tree-breadcrumb-item:hover { color: var(--accent); }
+  .tree-breadcrumb-item.bc-current { color: var(--accent); font-weight: 700; cursor: default; }
+  .tree-breadcrumb-sep { color: var(--border); font-size: 11px; }
+
+  /* Zoom controls — bottom-start (RTL: bottom-right) */
+  .tree-zoom-controls {
+    position: absolute; bottom: 18px; right: 18px; display: flex; flex-direction: column; gap: 8px; z-index: 10;
+  }
+  .tree-zoom-btn {
+    width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--border);
+    background: rgba(255,255,255,0.92); color: var(--primary); font-size: 20px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(8px); box-shadow: var(--shadow-sm);
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    font-weight: 600; line-height: 1;
+  }
+  .tree-zoom-btn:hover { background: var(--primary-bg); border-color: var(--primary); box-shadow: var(--shadow); }
+  .tree-zoom-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Add-person button — bottom-start */
+  .tree-add-wrap {
+    position: absolute; bottom: 18px; left: 18px; z-index: 10;
+  }
+
+  /* Empty state */
+  .tree-empty {
+    position: absolute; inset: 0; z-index: 3;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; pointer-events: none;
+  }
+  .tree-empty-watermark {
+    width: 200px; height: 200px; object-fit: contain; opacity: 0.05;
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  }
+  .tree-empty-text {
+    font-size: 15px; color: var(--text-muted); text-align: center;
+    position: relative; z-index: 1;
+  }
+  .tree-empty-icon { font-size: 52px; position: relative; z-index: 1; }
+
+  /* Detail side panel */
+  .tree-detail-panel {
+    position: fixed; top: 0; left: -380px; width: 360px; height: 100vh;
+    background: var(--surface); box-shadow: 4px 0 40px rgba(0,0,0,0.13);
+    z-index: 300; display: flex; flex-direction: column;
+    transition: left 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow-y: auto; border-right: 1px solid var(--border);
+  }
+  .tree-detail-panel.open { left: 0; }
+  @media (max-width: 520px) {
+    .tree-detail-panel { width: 100%; left: -100%; }
+    .tree-detail-panel.open { left: 0; }
+  }
+  .tree-panel-close-btn {
+    position: absolute; top: 14px; left: 14px;
+    background: var(--primary-bg); border: none; border-radius: 50%;
+    width: 34px; height: 34px; cursor: pointer; font-size: 15px;
+    color: var(--text-muted); display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s; z-index: 1;
+  }
+  .tree-panel-close-btn:hover { background: var(--primary-pale); color: var(--primary); }
+  .tree-panel-close-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .tree-panel-photo {
+    width: 80px; height: 80px; border-radius: 50%;
+    border: 3px solid var(--accent); display: flex; align-items: center; justify-content: center;
+    margin: 56px auto 16px; background: var(--primary-bg);
+    font-size: 28px; color: var(--primary); font-weight: 700; flex-shrink: 0;
+    box-shadow: 0 4px 16px rgba(14,165,164,0.18);
+    overflow: hidden;
+  }
+  .tree-panel-photo img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+  .tree-panel-name {
+    font-size: 22px; font-weight: 700; color: var(--text);
+    text-align: center; padding: 0 24px; line-height: 1.3;
+  }
+  .tree-panel-latin { font-size: 13px; color: var(--text-muted); text-align: center; padding: 3px 24px 0; direction: ltr; }
+  .tree-panel-years { font-size: 13px; color: var(--text-muted); text-align: center; padding: 5px 24px 0; }
+  .tree-panel-spine-badge {
+    background: var(--accent-bg); border: 1px solid var(--accent); color: var(--accent);
+    font-size: 11px; font-weight: 700; border-radius: 99px; padding: 4px 14px;
+    margin: 10px auto 0; width: fit-content; display: none;
+  }
+  .tree-panel-divider { height: 1px; background: var(--border); margin: 18px 24px; }
+  .tree-panel-section { padding: 0 24px 14px; }
+  .tree-panel-label {
+    font-size: 11px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px;
+  }
+  .tree-panel-rel-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: color 0.12s;
+  }
+  .tree-panel-rel-row:last-child { border-bottom: none; }
+  .tree-panel-rel-row:hover .tree-panel-rel-name { color: var(--accent); }
+  .tree-panel-rel-lbl  { font-size: 11px; color: var(--text-muted); min-width: 64px; }
+  .tree-panel-rel-name { font-size: 13px; font-weight: 600; color: var(--primary); flex: 1; padding: 0 8px; }
+  .tree-panel-rel-arrow { font-size: 13px; color: var(--border); }
+  .tree-panel-story {
+    font-size: 13px; line-height: 1.8; color: var(--text-muted);
+    background: var(--primary-bg); padding: 12px; border-radius: var(--radius-sm);
+    margin: 0 24px 16px; white-space: pre-wrap;
+  }
+  .tree-panel-actions {
+    padding: 16px 24px 32px; display: flex; gap: 10px;
+    border-top: 1px solid var(--border); flex-wrap: wrap; margin-top: auto;
+  }
+  .tree-panel-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.22);
+    z-index: 299; backdrop-filter: blur(1px);
+  }
+  .tree-panel-overlay.visible { display: block; }
+
+  /* Mobile hint */
+  .tree-mobile-hint {
+    display: none; position: absolute; top: 0; right: 0; left: 0; z-index: 6;
+    background: var(--gold-bg); border-bottom: 1px solid var(--gold-light);
+    padding: 8px 16px; font-size: 12px; color: var(--text-mid); text-align: center;
+  }
+  @media (max-width: 520px) { .tree-mobile-hint { display: block; } }
+</style>
+</head>
+<body>
+
+<!-- Pending gate -->
+<div class="gate" id="pending-gate" style="display:none" role="alert" aria-live="polite">
+  <div class="gate-box">
+    <span class="gate-icon" aria-hidden="true">⏳</span>
+    <h2 class="gate-title">ממתין לאישור</h2>
+    <p class="gate-sub">בקשת הגישה שלך נשלחה למנהל.<br>תקבל/י גישה לאחר האישור.</p>
+    <button class="btn btn-outline btn-sm btn-danger" onclick="doSignOut()">יציאה</button>
+  </div>
+</div>
+
+<!-- Login gate -->
+<div class="gate" id="login-gate" role="main">
+  <div class="gate-box">
+    <span class="gate-icon" aria-hidden="true">🌳</span>
+    <h2 class="gate-title">עץ משפחת שטיינברג</h2>
+    <p class="gate-sub">כניסה נדרשת לצפייה בעץ המשפחה</p>
+    <button class="btn btn-primary" style="font-size:15px;padding:14px 32px;gap:10px" onclick="signInWithGoogle()">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#fff" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#fff" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#fff" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#fff" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+      כניסה עם Google
+    </button>
+  </div>
+</div>
+
+<!-- Tree viewport -->
+<div class="tree-wrap" id="tree-wrap">
+  <!-- Mobile gesture hint -->
+  <div class="tree-mobile-hint" id="tree-mobile-hint" role="note" aria-label="הוראות מגע">
+    👆 גרור להזזה · צבוט להגדלה/הקטנה
+  </div>
+
+  <!-- Breadcrumb overlay -->
+  <div class="tree-breadcrumb" id="tree-breadcrumb" aria-label="מסלול עץ" role="navigation"></div>
+
+  <!-- SVG connectors layer -->
+  <div class="tree-svg-layer" id="tree-svg-layer" aria-hidden="true">
+    <svg class="tree-svg" id="tree-svg"></svg>
+  </div>
+
+  <!-- Cards canvas -->
+  <div class="tree-canvas" id="tree-canvas"></div>
+
+  <!-- Empty state -->
+  <div class="tree-empty" id="tree-empty" style="display:none" role="status" aria-live="polite">
+    <img class="tree-empty-watermark"
+         src="/assets/branding/logo.png"
+         alt=""
+         aria-hidden="true">
+    <span class="tree-empty-icon" aria-hidden="true">🌳</span>
+    <div class="tree-empty-text">
+      <strong>העץ המשפחתי ריק עדיין</strong><br>
+      <span id="tree-empty-hint" style="font-size:13px;opacity:.7"></span>
+    </div>
+  </div>
+
+  <!-- Zoom controls (bottom-right in RTL = inline-start) -->
+  <div class="tree-zoom-controls" role="group" aria-label="פקדי מרחק">
+    <button class="tree-zoom-btn" onclick="treeZoom(0.18)" aria-label="הגדל תצוגה">+</button>
+    <button class="tree-zoom-btn" onclick="treeZoom(-0.18)" aria-label="הקטן תצוגה">−</button>
+    <button class="tree-zoom-btn" onclick="treeCenter()" aria-label="מרכז עץ" title="מרכז">⊙</button>
+    <button class="tree-zoom-btn" id="tree-fs-btn" onclick="treeToggleFullscreen()" aria-label="מסך מלא">⛶</button>
+  </div>
+
+  <!-- Add person (bottom-left in RTL) -->
+  <div class="tree-add-wrap">
+    <button id="btn-add-tree-person"
+            class="btn btn-accent btn-sm"
+            onclick="openAddTreePerson()"
+            style="display:none"
+            aria-label="הוסף אדם לעץ המשפחה">
+      + הוסף אדם
+    </button>
+  </div>
+</div>
+
+<!-- Detail side panel -->
+<div class="tree-panel-overlay" id="tree-panel-overlay" onclick="closeTreePanel()" aria-hidden="true"></div>
+<aside class="tree-detail-panel" id="tree-detail-panel" aria-label="פרטי אדם" role="complementary">
+  <button class="tree-panel-close-btn" onclick="closeTreePanel()" aria-label="סגור פאנל">✕</button>
+  <div class="tree-panel-photo" id="tree-panel-photo" aria-hidden="true"></div>
+  <div class="tree-panel-name"  id="tree-panel-name"  role="heading" aria-level="2"></div>
+  <div class="tree-panel-latin" id="tree-panel-latin"></div>
+  <div class="tree-panel-years" id="tree-panel-years"></div>
+  <div class="tree-panel-spine-badge" id="tree-panel-spine-badge">✦ שושלת שטיינברג</div>
+  <div class="tree-panel-divider" aria-hidden="true"></div>
+  <div class="tree-panel-section">
+    <div class="tree-panel-label">קשרים משפחתיים</div>
+    <div id="tree-panel-rels" role="list"></div>
+  </div>
+  <div class="tree-panel-story" id="tree-panel-story" style="display:none"></div>
+  <div class="tree-panel-actions" id="tree-panel-actions">
+    <button class="btn btn-outline btn-sm" id="tree-panel-edit-btn" style="display:none" aria-label="ערוך פרטי אדם">ערוך</button>
+    <button class="btn btn-outline btn-sm btn-danger" id="tree-panel-del-btn" style="display:none" aria-label="מחק אדם מהעץ">מחק</button>
+  </div>
+</aside>
+
+<!-- Add / Edit person modal -->
+<div class="modal-overlay" id="modal-tree-person" role="dialog" aria-modal="true" aria-labelledby="tree-person-modal-title">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title" id="tree-person-modal-title">🌳 הוספת אדם לעץ</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="form-group" style="flex:1;min-width:150px">
+        <label class="form-label" for="tp-name-he">שם בעברית *</label>
+        <input id="tp-name-he" class="form-input" placeholder="דוד שטיינברג" autocomplete="off">
+      </div>
+      <div class="form-group" style="flex:1;min-width:150px">
+        <label class="form-label" for="tp-name-latin">שם בלועזית</label>
+        <input id="tp-name-latin" class="form-input" placeholder="David Steinberg" autocomplete="off" dir="ltr">
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="form-group" style="flex:1;min-width:110px">
+        <label class="form-label" for="tp-nickname">כינוי</label>
+        <input id="tp-nickname" class="form-input" placeholder="דודי">
+      </div>
+      <div class="form-group" style="flex:1;min-width:110px">
+        <label class="form-label" for="tp-maiden">שם נעורים</label>
+        <input id="tp-maiden" class="form-input" placeholder="לפני נישואין">
+      </div>
+      <div class="form-group" style="flex:1;min-width:90px">
+        <label class="form-label" for="tp-gender">מין</label>
+        <select id="tp-gender" class="form-input">
+          <option value="m">זכר</option>
+          <option value="f">נקבה</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="form-group" style="flex:1;min-width:90px">
+        <label class="form-label" for="tp-birth-year">שנת לידה</label>
+        <input id="tp-birth-year" class="form-input" type="number" placeholder="1920" min="1700" max="2100">
+      </div>
+      <div class="form-group" style="flex:1;min-width:130px">
+        <label class="form-label" for="tp-birth-city">עיר לידה</label>
+        <input id="tp-birth-city" class="form-input" placeholder="כרמיאל">
+      </div>
+      <div class="form-group" style="flex:1;min-width:90px">
+        <label class="form-label" for="tp-death-year">שנת פטירה</label>
+        <input id="tp-death-year" class="form-input" type="number" placeholder="(אם נפטר/ה)" min="1700" max="2100">
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="form-group" style="flex:1;min-width:130px">
+        <label class="form-label" for="tp-origin">ארץ מוצא</label>
+        <input id="tp-origin" class="form-input" placeholder="רוסיה">
+      </div>
+      <div class="form-group" style="flex:1;min-width:130px">
+        <label class="form-label" for="tp-burial">מיקום קבורה</label>
+        <input id="tp-burial" class="form-input" placeholder="בית עלמין X">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">תמונה</label>
+      <div style="display:flex;gap:10px;align-items:center">
+        <img id="tp-photo-preview"
+             alt="תצוגה מקדימה של תמונת הפרופיל"
+             style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);display:none">
+        <input id="tp-photo-file" type="file" accept="image/*" class="form-input"
+               style="font-size:12px;padding:6px"
+               onchange="tpPreviewPhoto(this)"
+               aria-label="העלה תמונת פרופיל">
+      </div>
+      <input id="tp-photo-data" type="hidden">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="tp-story">סיפור / הערה</label>
+      <textarea id="tp-story" class="form-input" rows="3" placeholder="כמה מילים על האדם..."></textarea>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="form-group" style="flex:1;min-width:150px">
+        <label class="form-label" for="tp-father">אב</label>
+        <select id="tp-father" class="form-input"><option value="">— אין / לא ידוע —</option></select>
+      </div>
+      <div class="form-group" style="flex:1;min-width:150px">
+        <label class="form-label" for="tp-mother">אם</label>
+        <select id="tp-mother" class="form-input"><option value="">— אין / לא ידוע —</option></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="tp-spouse">בן/בת זוג</label>
+      <select id="tp-spouse" class="form-input"><option value="">— אין / לא ידוע —</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-tree-person')">ביטול</button>
+      <button class="btn btn-accent" id="tp-save-btn" onclick="saveTreePerson()">הוסף</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+// ── Firebase ──────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey:            "AIzaSyCYJBKmEwSTIsokBZlc26qPFin14uJqNxE",
+  authDomain:        "steinberg-family-c0c32.firebaseapp.com",
+  projectId:         "steinberg-family-c0c32",
+  storageBucket:     "steinberg-family-c0c32.firebasestorage.app",
+  messagingSenderId: "782902361877",
+  appId:             "1:782902361877:web:8230d223bb517c73bff31c"
+});
+const db   = firebase.firestore();
+const auth = firebase.auth();
+
+// ── State ─────────────────────────────────────────────────
+let currentUser = null;
+let isAdmin     = false;
+
+// ── Utilities ─────────────────────────────────────────────
+const AVATAR_COLORS = ['#8B5E3C','#0EA5A4','#7A8C5C','#C49A3C','#4A7C9E','#A67550','#5C7A6B','#9E4A7C'];
+function avatarColor(str) {
+  let h = 0;
+  for (const c of str) h = (h * 31 + c.charCodeAt(0)) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[h];
+}
+function initials(str) {
+  const w = str.trim().split(/\s+/);
+  return (w[0]?.[0] || '') + (w[1]?.[0] || '');
+}
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ── Toast ─────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Modal ─────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+function resetForm(modalId) {
+  const el = document.getElementById(modalId);
+  el.querySelectorAll('input[type=text],input[type=date],input[type=email],input:not([type])').forEach(i => i.value = '');
+  el.querySelectorAll('input[type=number]').forEach(i => i.value = i.defaultValue || i.min || '');
+  el.querySelectorAll('input[type=checkbox]').forEach(i => i.checked = false);
+  el.querySelectorAll('select').forEach(s => { s.selectedIndex = 0; });
+  el.querySelectorAll('textarea').forEach(t => t.value = '');
+}
+
+// ── Auth ──────────────────────────────────────────────────
+auth.getRedirectResult().catch(e => {
+  if (e.code && e.code !== 'auth/no-such-provider' && e.code !== 'auth/null-user') {
+    setTimeout(() => showToast('שגיאת כניסה: ' + e.message), 500);
+  }
+});
+
+auth.onAuthStateChanged(async user => {
+  currentUser = user;
+  const loginGate   = document.getElementById('login-gate');
+  const pendingGate = document.getElementById('pending-gate');
+
+  if (user) {
+    loginGate.classList.add('hidden');
+    let approved = false;
+    try { approved = await checkUserApproval(user); }
+    catch(e) {
+      await _registerPending(user).catch(() => {});
+    }
+    if (!approved) {
+      pendingGate.style.display = 'flex';
+      return;
+    }
+    pendingGate.style.display = 'none';
+    loadAdminStatus();
+    loadFamilyTree();
+    const addBtn = document.getElementById('btn-add-tree-person');
+    if (addBtn) addBtn.style.display = '';
+  } else {
+    loginGate.classList.remove('hidden');
+    pendingGate.style.display = 'none';
+  }
+});
+
+function signInWithGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithRedirect(provider);
+}
+function doSignOut() {
+  auth.signOut();
+}
+function requireAuth() {
+  if (!currentUser) { showToast('יש להתחבר תחילה'); return false; }
+  return true;
+}
+
+// ── Admin ─────────────────────────────────────────────────
+function loadAdminStatus() {
+  if (!currentUser) { isAdmin = false; return; }
+  db.collection('settings').doc('admins').get().then(doc => {
+    isAdmin = doc.exists && (doc.data().uids || []).includes(currentUser.uid);
+    const delBtn = document.getElementById('tree-panel-del-btn');
+    if (delBtn) delBtn.style.display = isAdmin ? '' : 'none';
+  }).catch(() => { isAdmin = false; });
+}
+
+// ── Approval helpers ──────────────────────────────────────
+async function checkUserApproval(user) {
+  const adminDoc  = await db.collection('settings').doc('admins').get();
+  const adminUids = adminDoc.exists ? (adminDoc.data().uids || []) : [];
+  if (adminUids.includes(user.uid)) {
+    await _ensureApproved(user);
+    return true;
+  }
+  const approvedDoc = await db.collection('settings').doc('approvedUsers').get();
+  if (!approvedDoc.exists) return true;
+  const approvedUids = approvedDoc.data().uids || [];
+  if (approvedUids.includes(user.uid)) return true;
+  await _registerPending(user);
+  return false;
+}
+async function _ensureApproved(user) {
+  const ref = db.collection('settings').doc('approvedUsers');
+  const doc = await ref.get();
+  const uids = doc.exists ? (doc.data().uids || []) : [];
+  if (!uids.includes(user.uid)) await ref.set({ uids: [...uids, user.uid] });
+}
+async function _registerPending(user) {
+  const ref  = db.collection('settings').doc('pendingUsers');
+  const doc  = await ref.get();
+  const list = doc.exists ? (doc.data().users || []) : [];
+  if (!list.find(u => u.uid === user.uid)) {
+    await ref.set({ users: [...list, {
+      uid: user.uid,
+      email: user.email || '',
+      name:  user.displayName || user.email || '',
+      requestedAt: new Date().toISOString()
+    }]});
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// FAMILY TREE
+// ════════════════════════════════════════════════════════
+let _treePersons   = [];
+let _editingTreeId = null;
+let _treeScale     = 1;
+let _treePan       = { x: 60, y: 60 };
+let _focusedTreeId = null;
+let _treeDrag      = null;
+let _treeFitPending = false;
+
+const CARD_W = 140, CARD_H = 110, COUPLE_GAP = 14, H_GAP = 24, GEN_H = 175;
+
+function loadFamilyTree() {
+  db.collection('familyTree').onSnapshot(snap => {
+    _treePersons = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderTree();
+  }, err => console.error('familyTree load error:', err));
+}
+
+// ── Spine helpers ─────────────────────────────────────────
+function getSpineIds(persons) {
+  const s = new Set();
+  persons.forEach(p => {
+    const he = (p.nameHe    || '').toLowerCase();
+    const la = (p.nameLatin || '').toLowerCase();
+    if (he.includes('שטיינברג') || la.includes('shteinberg') || la.includes('steinberg')) s.add(p.id);
+  });
+  return s;
+}
+
+function _computeAncestors(id, byId) {
+  const out = new Set();
+  const visit = pid => {
+    if (!pid || out.has(pid)) return;
+    out.add(pid);
+    const p = byId[pid];
+    if (p) { visit(p.fatherId); visit(p.motherId); }
+  };
+  const p = byId[id];
+  if (p) { visit(p.fatherId); visit(p.motherId); }
+  return out;
+}
+
+function _computeDescendants(id, persons) {
+  const kids = {};
+  persons.forEach(p => {
+    [p.fatherId, p.motherId].forEach(pid => {
+      if (pid) (kids[pid] = kids[pid] || []).push(p.id);
+    });
+  });
+  const out = new Set();
+  const visit = pid => {
+    if (out.has(pid)) return;
+    out.add(pid);
+    (kids[pid] || []).forEach(visit);
+  };
+  (kids[id] || []).forEach(visit);
+  return out;
+}
+
+function applyTreeFocus(id) {
+  _focusedTreeId = id;
+  const byId      = Object.fromEntries(_treePersons.map(p => [p.id, p]));
+  const ancestors   = _computeAncestors(id, byId);
+  const descendants = _computeDescendants(id, _treePersons);
+  const lit = new Set([id, ...ancestors, ...descendants]);
+  _treePersons.forEach(p => { if (lit.has(p.id) && p.spouseId) lit.add(p.spouseId); });
+  document.querySelectorAll('.tree-card').forEach(el => {
+    const pid = el.dataset.pid;
+    el.classList.remove('tc-dim', 'tc-focused');
+    if (pid === id)           el.classList.add('tc-focused');
+    else if (!lit.has(pid))   el.classList.add('tc-dim');
+  });
+  _renderTreeBreadcrumb(id, byId);
+}
+
+function clearTreeFocus() {
+  _focusedTreeId = null;
+  document.querySelectorAll('.tree-card').forEach(el => el.classList.remove('tc-dim', 'tc-focused'));
+  const bc = document.getElementById('tree-breadcrumb');
+  if (bc) { bc.innerHTML = ''; bc.classList.remove('visible'); }
+}
+
+function _renderTreeBreadcrumb(id, byId) {
+  const bc = document.getElementById('tree-breadcrumb');
+  if (!bc) return;
+  const chain = [];
+  let cur = byId[id];
+  const seen = new Set();
+  while (cur && !seen.has(cur.id)) {
+    chain.unshift(cur);
+    seen.add(cur.id);
+    cur = cur.fatherId && byId[cur.fatherId] ? byId[cur.fatherId]
+        : cur.motherId && byId[cur.motherId] ? byId[cur.motherId] : null;
+  }
+  if (chain.length <= 1) { bc.classList.remove('visible'); return; }
+  const parts = [];
+  chain.forEach((p, i) => {
+    const isCur = i === chain.length - 1;
+    parts.push(`<span class="tree-breadcrumb-item${isCur ? ' bc-current' : ''}" tabindex="0"
+      ${isCur ? '' : `onclick="openPersonDetail('${p.id}')"`}>${esc(p.nameHe || p.nameLatin || '?')}</span>`);
+    if (!isCur) parts.push('<span class="tree-breadcrumb-sep" aria-hidden="true"> ← </span>');
+  });
+  bc.innerHTML = parts.join('');
+  bc.classList.add('visible');
+}
+
+// ── Detail panel ──────────────────────────────────────────
+function openTreePanel(id) {
+  const p     = _treePersons.find(x => x.id === id);
+  if (!p) return;
+  const byId    = Object.fromEntries(_treePersons.map(x => [x.id, x]));
+  const spineIds = getSpineIds(_treePersons);
+
+  const photoWrap = document.getElementById('tree-panel-photo');
+  if (photoWrap) {
+    if (p.photoData) {
+      photoWrap.innerHTML = `<img src="${p.photoData}" alt="${esc(p.nameHe || 'תמונת פרופיל')}">`;
+    } else {
+      const init = (p.nameHe || '?').split(' ').map(w => w[0]).join('').slice(0, 2);
+      const bg   = avatarColor(p.nameHe || p.id);
+      photoWrap.innerHTML = `<span style="background:${bg};width:100%;height:100%;display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-size:28px;font-weight:700">${init}</span>`;
+    }
+  }
+
+  const nameEl  = document.getElementById('tree-panel-name');
+  if (nameEl) nameEl.textContent = [p.nameHe, p.nickname ? `"${p.nickname}"` : ''].filter(Boolean).join(' ');
+  const latinEl = document.getElementById('tree-panel-latin');
+  if (latinEl) latinEl.textContent = [p.nameLatin, p.maidenName ? `(${p.maidenName})` : ''].filter(Boolean).join(' ');
+  const yearsEl = document.getElementById('tree-panel-years');
+  if (yearsEl) {
+    const yrs = [p.birthYear, p.deathYear].filter(Boolean).join(' — ');
+    const loc  = [p.birthCity, p.originCountry].filter(Boolean).join(', ');
+    yearsEl.textContent = [yrs, loc].filter(Boolean).join('  ·  ');
+  }
+
+  const badge = document.getElementById('tree-panel-spine-badge');
+  if (badge) badge.style.display = spineIds.has(id) ? 'block' : 'none';
+
+  const relsEl = document.getElementById('tree-panel-rels');
+  if (relsEl) {
+    const father   = p.fatherId ? byId[p.fatherId] : null;
+    const mother   = p.motherId ? byId[p.motherId] : null;
+    const spouse   = p.spouseId ? byId[p.spouseId] : null;
+    const children = _treePersons.filter(x => x.fatherId === id || x.motherId === id);
+    const rows = [];
+    if (father) rows.push({ lbl: 'אב',        person: father });
+    if (mother) rows.push({ lbl: 'אם',        person: mother });
+    if (spouse) rows.push({ lbl: 'בן/בת זוג', person: spouse });
+    children.forEach(c => rows.push({ lbl: 'ילד/ה', person: c }));
+    relsEl.innerHTML = rows.map(r =>
+      `<div class="tree-panel-rel-row" onclick="openPersonDetail('${r.person.id}')" role="listitem" tabindex="0"
+           aria-label="${esc(r.lbl)}: ${esc(r.person.nameHe || r.person.nameLatin || '?')}">
+        <span class="tree-panel-rel-lbl">${esc(r.lbl)}</span>
+        <span class="tree-panel-rel-name">${esc(r.person.nameHe || r.person.nameLatin || '?')}</span>
+        <span class="tree-panel-rel-arrow" aria-hidden="true">←</span>
+      </div>`
+    ).join('');
+  }
+
+  const storyEl = document.getElementById('tree-panel-story');
+  if (storyEl) { storyEl.textContent = p.story || ''; storyEl.style.display = p.story ? '' : 'none'; }
+
+  const editBtn = document.getElementById('tree-panel-edit-btn');
+  const delBtn  = document.getElementById('tree-panel-del-btn');
+  if (editBtn) { editBtn.onclick = () => { closeTreePanel(); editTreePerson(id); }; editBtn.style.display = currentUser ? '' : 'none'; }
+  if (delBtn)  { delBtn.onclick  = () => deleteTreePerson(id); delBtn.style.display = isAdmin ? '' : 'none'; }
+
+  document.getElementById('tree-detail-panel').classList.add('open');
+  document.getElementById('tree-panel-overlay').classList.add('visible');
+}
+
+function closeTreePanel() {
+  document.getElementById('tree-detail-panel').classList.remove('open');
+  document.getElementById('tree-panel-overlay').classList.remove('visible');
+  clearTreeFocus();
+}
+
+// ── Layout ────────────────────────────────────────────────
+function computeTreeLayout(persons) {
+  if (!persons.length) return { positions: {}, units: [] };
+  const byId = Object.fromEntries(persons.map(p => [p.id, p]));
+
+  const units = [], p2u = {};
+  const used = new Set();
+  persons.forEach(p => {
+    if (used.has(p.id)) return;
+    used.add(p.id);
+    const u = { members: [p], childUnits: [], _w: 0 };
+    p2u[p.id] = u;
+    const sp = p.spouseId && byId[p.spouseId] && !used.has(p.spouseId) ? byId[p.spouseId] : null;
+    if (sp) {
+      used.add(sp.id);
+      const pHasParents  = !!(p.fatherId  || p.motherId);
+      const spHasParents = !!(sp.fatherId || sp.motherId);
+      if (spHasParents && !pHasParents) u.members.unshift(sp);
+      else if (!pHasParents && !spHasParents && sp.gender === 'm') u.members.unshift(sp);
+      else u.members.push(sp);
+      p2u[sp.id] = u;
+    }
+    units.push(u);
+  });
+
+  const childSet = new Set();
+  persons.forEach(p => {
+    const cu = p2u[p.id];
+    [p.fatherId, p.motherId].forEach(pid => {
+      if (!pid || !p2u[pid]) return;
+      const pu = p2u[pid];
+      if (pu !== cu && !pu.childUnits.includes(cu)) { pu.childUnits.push(cu); childSet.add(cu); }
+    });
+  });
+
+  units.forEach(u => {
+    if (u.childUnits.length < 2) return;
+    const parentIds = new Set(u.members.map(m => m.id));
+    u.childUnits.sort((a, b) => {
+      const directChild = cu => cu.members.find(m => parentIds.has(m.fatherId) || parentIds.has(m.motherId));
+      const ay = directChild(a)?.birthYear ?? Infinity;
+      const by = directChild(b)?.birthYear ?? Infinity;
+      return ay - by;
+    });
+  });
+
+  const roots  = units.filter(u => !childSet.has(u));
+  const genMap = new Map();
+  const q = roots.map(u => [u, 0]);
+  while (q.length) {
+    const [u, g] = q.shift();
+    if ((genMap.get(u) ?? -1) >= g) continue;
+    genMap.set(u, g);
+    u.childUnits.forEach(cu => q.push([cu, g + 1]));
+  }
+  units.forEach(u => { if (!genMap.has(u)) genMap.set(u, 0); });
+
+  const unitOwnW = u => u.members.length === 2 ? CARD_W * 2 + COUPLE_GAP : CARD_W;
+  function calcW(u) {
+    if (u._done) return u._w;
+    u._done = true;
+    if (!u.childUnits.length) { u._w = unitOwnW(u); return u._w; }
+    const sum = u.childUnits.reduce((s, c) => s + calcW(c), 0) + H_GAP * (u.childUnits.length - 1);
+    u._w = Math.max(unitOwnW(u), sum);
+    return u._w;
+  }
+  units.forEach(u => calcW(u));
+
+  const positions    = {};
+  const placedUnits  = new Set();
+  function place(u, leftX) {
+    if (placedUnits.has(u)) return;
+    placedUnits.add(u);
+    const g = genMap.get(u) ?? 0;
+    const y = g * GEN_H;
+    const ow = unitOwnW(u);
+    const cx = leftX + (u._w - ow) / 2;
+    if (u.members.length === 2) {
+      positions[u.members[0].id] = { x: cx, y };
+      positions[u.members[1].id] = { x: cx + CARD_W + COUPLE_GAP, y };
+    } else {
+      positions[u.members[0].id] = { x: cx, y };
+    }
+    let childX = leftX;
+    u.childUnits.forEach(cu => { place(cu, childX); childX += cu._w + H_GAP; });
+  }
+  const countMembers = (u, vis = new Set()) => {
+    if (vis.has(u)) return 0; vis.add(u);
+    return u.members.length + u.childUnits.reduce((s, c) => s + countMembers(c, vis), 0);
+  };
+  roots.sort((a, b) => countMembers(b) - countMembers(a));
+
+  let rx = 0;
+  if (roots.length > 0) { place(roots[0], 0); rx = roots[0]._w + H_GAP; }
+  roots.slice(1).forEach(r => {
+    const alreadyPlacedChildren = r.childUnits.filter(cu => cu.members.some(m => positions[m.id]));
+    if (alreadyPlacedChildren.length) {
+      const ownW = r.members.length === 2 ? CARD_W * 2 + COUPLE_GAP : CARD_W;
+      const childXs = alreadyPlacedChildren.flatMap(cu =>
+        cu.members.map(m => positions[m.id]).filter(Boolean).map(p => p.x)
+      );
+      const leftmostChildX = Math.min(...childXs);
+      const rg = genMap.get(r) ?? 0;
+      const sameGenXs = Object.values(positions).filter(p => p.y === rg * GEN_H).map(p => p.x);
+      const minSameGenX = sameGenXs.length ? Math.min(...sameGenXs) : Infinity;
+      let targetLeftX = leftmostChildX - ownW - H_GAP * 2;
+      if (isFinite(minSameGenX) && targetLeftX + ownW > minSameGenX - H_GAP) {
+        targetLeftX = minSameGenX - ownW - H_GAP * 2;
+      }
+      if (!placedUnits.has(r)) {
+        placedUnits.add(r);
+        const y = rg * GEN_H;
+        if (r.members.length === 2) {
+          positions[r.members[0].id] = { x: targetLeftX, y };
+          positions[r.members[1].id] = { x: targetLeftX + CARD_W + COUPLE_GAP, y };
+        } else {
+          positions[r.members[0].id] = { x: targetLeftX, y };
+        }
+      }
+    } else {
+      place(r, rx); rx += r._w + H_GAP;
+    }
+  });
+  units.forEach(u => {
+    if (!placedUnits.has(u)) { place(u, rx); rx += u._w + H_GAP; }
+  });
+
+  // Nudge leaf nodes
+  units.forEach(parent => {
+    if (parent.childUnits.length < 2) return;
+    const isLeaf = cu => cu.childUnits.length === 0 && cu.members.length === 1;
+    const leafKids    = parent.childUnits.filter(cu => isLeaf(cu) && positions[cu.members[0].id]);
+    const nonLeafKids = parent.childUnits.filter(cu => !isLeaf(cu) && cu.members.some(m => positions[m.id]));
+    if (!leafKids.length || !nonLeafKids.length) return;
+    const nonLeafMaxX = Math.max(...nonLeafKids.flatMap(cu =>
+      cu.members.map(m => positions[m.id]).filter(Boolean).map(p => p.x)
+    ));
+    leafKids.sort((a, b) => positions[a.members[0].id].x - positions[b.members[0].id].x);
+    let curX = nonLeafMaxX + CARD_W + H_GAP;
+    leafKids.forEach(cu => {
+      const pos = positions[cu.members[0].id];
+      if (curX < pos.x) pos.x = curX;
+      curX = pos.x + CARD_W + H_GAP;
+    });
+  });
+
+  // Ensure no negative x
+  const minX = Math.min(...Object.values(positions).map(p => p.x));
+  if (minX < H_GAP) {
+    const fix = H_GAP - minX;
+    Object.values(positions).forEach(p => { p.x += fix; });
+  }
+
+  // Collision guard
+  const coupleOf = {};
+  units.forEach(u => {
+    if (u.members.length === 2) {
+      coupleOf[u.members[0].id] = u.members[1].id;
+      coupleOf[u.members[1].id] = u.members[0].id;
+    }
+  });
+  const byY = {};
+  Object.entries(positions).forEach(([id, p]) => {
+    (byY[p.y] = byY[p.y] || []).push({ id, p });
+  });
+  Object.values(byY).forEach(row => {
+    row.sort((a, b) => a.p.x - b.p.x);
+    for (let i = 1; i < row.length; i++) {
+      if (row[i].p.x < row[i - 1].p.x + CARD_W) {
+        const delta = row[i - 1].p.x + CARD_W + H_GAP - row[i].p.x;
+        row[i].p.x += delta;
+        const partnerId = coupleOf[row[i].id];
+        if (partnerId && positions[partnerId] && positions[partnerId].y === row[i].p.y) {
+          const pi = row.findIndex(r => r.id === partnerId);
+          if (pi !== -1) row[pi].p.x += delta;
+        }
+      }
+    }
+  });
+  const occupiedSlots = new Map();
+  Object.entries(positions).forEach(([id, p]) => {
+    const key = `${Math.round(p.x)},${Math.round(p.y)}`;
+    if (occupiedSlots.has(key)) p.x = occupiedSlots.get(key) + CARD_W + H_GAP;
+    occupiedSlots.set(`${Math.round(p.x)},${Math.round(p.y)}`, p.x);
+  });
+
+  return { positions, units };
+}
+
+// ── Render ────────────────────────────────────────────────
+function renderTree() {
+  const canvas = document.getElementById('tree-canvas');
+  const empty  = document.getElementById('tree-empty');
+  if (!canvas) return;
+
+  if (!_treePersons.length) {
+    canvas.innerHTML = '';
+    const svgLayerE = document.getElementById('tree-svg-layer');
+    if (svgLayerE) svgLayerE.innerHTML = '<svg class="tree-svg" id="tree-svg"></svg>';
+    if (empty) {
+      empty.style.display = '';
+      const hint = document.getElementById('tree-empty-hint');
+      if (hint) hint.textContent = currentUser ? 'לחץ על "+ הוסף אדם" להתחלה' : 'יש להתחבר תחילה';
+    }
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  const { positions, units } = computeTreeLayout(_treePersons);
+  const allPos = Object.values(positions);
+  const W = Math.max(...allPos.map(p => p.x)) + CARD_W + 120;
+  const H = Math.max(...allPos.map(p => p.y)) + CARD_H + 160;
+
+  const spineIds = getSpineIds(_treePersons);
+
+  const unitCx  = u => {
+    const ps = u.members.map(m => positions[m.id]).filter(Boolean);
+    if (!ps.length) return 0;
+    return (Math.min(...ps.map(p => p.x)) + Math.max(...ps.map(p => p.x)) + CARD_W) / 2;
+  };
+  const unitTopY = u => (positions[u.members[0].id]?.y ?? 0);
+  const unitBotY = u => unitTopY(u) + CARD_H;
+
+  let svgLines = '';
+
+  // Spouse connectors
+  units.forEach(u => {
+    if (u.members.length < 2) return;
+    const p1 = positions[u.members[0].id], p2 = positions[u.members[1].id];
+    if (!p1 || !p2) return;
+    const ly = p1.y + CARD_H * 0.38;
+    const x1 = p1.x + CARD_W, x2 = p2.x;
+    svgLines += `<line class="tree-connector" x1="${x1}" y1="${ly}" x2="${x2}" y2="${ly}" stroke-dasharray="4 3" opacity="0.5"/>`;
+    svgLines += `<text x="${(x1+x2)/2}" y="${ly-5}" text-anchor="middle" font-size="11" fill="var(--accent)" opacity="0.7">♥</text>`;
+  });
+
+  // Parent→child curves
+  const actualChildCx = (parentUnit, childUnit) => {
+    const parentIds = parentUnit.members.map(m => m.id);
+    const actual = childUnit.members.find(m =>
+      parentIds.includes(m.fatherId) || parentIds.includes(m.motherId)
+    ) || childUnit.members[0];
+    const p = positions[actual.id];
+    return p ? p.x + CARD_W / 2 : unitCx(childUnit);
+  };
+
+  units.forEach(u => {
+    if (!u.childUnits.length) return;
+    const pcx  = unitCx(u);
+    const pbot = unitBotY(u);
+    const validChildren = u.childUnits.filter(cu => cu.members[0] && positions[cu.members[0].id]);
+    if (!validChildren.length) return;
+    const isSpineParent = u.members.some(m => spineIds.has(m.id));
+
+    validChildren.forEach(cu => {
+      const cx       = actualChildCx(u, cu);
+      const childTop = unitTopY(cu);
+      const midY     = pbot + (childTop - pbot) * 0.5;
+      const isSpineChild = cu.members.some(m => spineIds.has(m.id));
+      const cls = (isSpineParent && isSpineChild) ? 'tree-connector-spine' : 'tree-connector';
+      svgLines += `<path class="${cls}" d="M${pcx},${pbot} C${pcx},${midY} ${cx},${midY} ${cx},${childTop}"/>`;
+    });
+  });
+
+  // SVG
+  const svgLayer = document.getElementById('tree-svg-layer');
+  svgLayer.innerHTML = `<svg class="tree-svg" id="tree-svg" width="${W}" height="${H}">${svgLines}</svg>`;
+
+  // Country flags
+  const FLAG_CC = {
+    'ישראל':'il','ארץ ישראל':'il','פלסטין':'il','ארץ-ישראל':'il',
+    'רומניה':'ro','אוקראינה':'ua','אוקריאינה':'ua','רוסיה':'ru',
+    'ברית המועצות':'ru','פולין':'pl','פולניה':'pl','הונגריה':'hu',
+    'גרמניה':'de','אוסטריה':'at','אמריקה':'us','ארצות הברית':'us',
+    'ארה"ב':'us','אנגליה':'gb','בריטניה':'gb','צרפת':'fr',
+    'מרוקו':'ma','תוניסיה':'tn','תורכיה':'tr','טורקיה':'tr',
+    'בלארוס':'by','ליטא':'lt','לטביה':'lv',
+  };
+
+  let cardsHtml = '';
+  const renderedIds = new Set();
+  _treePersons.forEach(p => {
+    if (renderedIds.has(p.id)) return;
+    renderedIds.add(p.id);
+    const pos = positions[p.id];
+    if (!pos) return;
+    const deceased = !!p.deathYear;
+    const isSpine  = spineIds.has(p.id);
+    const init     = (p.nameHe || '?').split(' ').map(w => w[0]).join('').slice(0, 2);
+    const bgColor  = avatarColor(p.nameHe || p.id);
+    const photoHtml = p.photoData
+      ? `<img class="tc-photo" src="${p.photoData}" alt="${esc(p.nameHe || 'תמונה')}">`
+      : `<div class="tc-photo" style="background:${bgColor};color:#fff;line-height:39px" aria-hidden="true">${init}</div>`;
+    const years = [p.birthYear, p.deathYear].filter(Boolean).join(' – ');
+    const city  = [p.birthCity, p.originCountry].filter(Boolean).join(', ');
+    const flagCc = p.originCountry ? (FLAG_CC[p.originCountry.trim()] || '') : '';
+    const flag = flagCc
+      ? `<img src="https://flagcdn.com/16x12/${flagCc}.png" alt="${flagCc.toUpperCase()}" style="vertical-align:middle;margin-left:3px;border-radius:1px">`
+      : '';
+    const myUnit  = units.find(u => u.members.some(m => m.id === p.id));
+    const partner = myUnit?.members.find(m => m.id !== p.id);
+    const hasParents = p.fatherId || p.motherId;
+    const inLaw = !hasParents && !!(partner && (partner.fatherId || partner.motherId));
+    const classes = ['tree-card',
+      deceased ? 'deceased' : '',
+      inLaw    ? 'in-law'   : '',
+      isSpine  ? 'spine'    : '',
+    ].filter(Boolean).join(' ');
+    const label = [p.nameHe, years ? `(${years})` : ''].filter(Boolean).join(' ');
+    cardsHtml += `<div class="${classes}" data-pid="${p.id}"
+      style="left:${pos.x}px;top:${pos.y}px"
+      onclick="openPersonDetail('${p.id}')"
+      role="button" tabindex="0"
+      aria-label="${esc(label)}"
+      onkeydown="if(event.key==='Enter'||event.key===' ')openPersonDetail('${p.id}')">
+      ${p.story ? '<span class="tc-story-icon" aria-hidden="true">📖</span>' : ''}
+      ${photoHtml}
+      <div class="tc-name">${esc(p.nameHe || '')}</div>
+      ${p.maidenName ? `<div class="tc-maiden">(${esc(p.maidenName)})</div>` : ''}
+      ${years ? `<div class="tc-years">${years}</div>` : ''}
+      ${(city || flag) ? `<div class="tc-city">${flag}${city ? ' ' + esc(city) : ''}</div>` : ''}
+    </div>`;
+  });
+
+  canvas.innerHTML = cardsHtml;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  scheduleTreeFit();
+}
+
+// ── Pan / Zoom ─────────────────────────────────────────────
+function _applyTreeTransform() {
+  const m = `matrix(${_treeScale},0,0,${_treeScale},${_treePan.x},${_treePan.y})`;
+  const c = document.getElementById('tree-canvas');
+  const s = document.getElementById('tree-svg-layer');
+  if (c) c.style.transform = m;
+  if (s) s.style.transform = m;
+}
+function treeZoom(delta) {
+  _treeScale = Math.min(2.5, Math.max(0.12, _treeScale + delta));
+  _applyTreeTransform();
+}
+function scheduleTreeFit() {
+  _treeFitPending = true;
+  setTimeout(treeFit, 80);
+}
+function treeFit() {
+  const vp = document.getElementById('tree-wrap');
+  const canvas = document.getElementById('tree-canvas');
+  if (!vp || !canvas) return;
+  const vpW = vp.clientWidth, vpH = vp.clientHeight;
+  const cW = parseFloat(canvas.style.width);
+  const cH = parseFloat(canvas.style.height);
+  if (!vpW || !vpH || !cW || !cH) {
+    if (_treeFitPending) setTimeout(treeFit, 80);
+    return;
+  }
+  _treeFitPending = false;
+  const padX = 24, padY = 24;
+  const scaleW = (vpW - padX * 2) / cW;
+  const scaleH = (vpH - padY * 2) / cH;
+  const scale = Math.min(1, Math.max(0.12, Math.min(scaleW, scaleH)));
+  _treeScale = scale;
+  _treePan   = { x: (vpW - cW * scale) / 2, y: padY };
+  _applyTreeTransform();
+}
+function treeCenter() { treeFit(); }
+function treeToggleFullscreen() {
+  const vp = document.getElementById('tree-wrap');
+  if (!document.fullscreenElement) {
+    vp.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+// ── Pan/zoom interaction ──────────────────────────────────
+(function initPanZoom() {
+  const vp = document.getElementById('tree-wrap');
+
+  // Mouse drag
+  vp.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    _treeDrag = { sx: e.clientX, sy: e.clientY, px: _treePan.x, py: _treePan.y };
+    vp.classList.add('grabbing');
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', e => {
+    if (!_treeDrag) return;
+    _treePan.x = _treeDrag.px + (e.clientX - _treeDrag.sx);
+    _treePan.y = _treeDrag.py + (e.clientY - _treeDrag.sy);
+    _applyTreeTransform();
+  });
+  window.addEventListener('mouseup', () => {
+    _treeDrag = null;
+    vp.classList.remove('grabbing');
+  });
+
+  // Wheel zoom
+  vp.addEventListener('wheel', e => {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.12 : -0.12;
+    const rect  = vp.getBoundingClientRect();
+    const mx    = e.clientX - rect.left;
+    const my    = e.clientY - rect.top;
+    const prevScale = _treeScale;
+    _treeScale = Math.min(2.5, Math.max(0.12, _treeScale + delta));
+    const ratio = _treeScale / prevScale;
+    _treePan.x = mx - ratio * (mx - _treePan.x);
+    _treePan.y = my - ratio * (my - _treePan.y);
+    _applyTreeTransform();
+  }, { passive: false });
+
+  // Touch pan + pinch
+  let _touches = null;
+  vp.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+      _touches = { t: 1, sx: e.touches[0].clientX, sy: e.touches[0].clientY, px: _treePan.x, py: _treePan.y };
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      _touches = { t: 2, dist: Math.hypot(dx, dy), scale: _treeScale };
+    }
+    e.preventDefault();
+  }, { passive: false });
+  vp.addEventListener('touchmove', e => {
+    if (!_touches) return;
+    if (_touches.t === 1 && e.touches.length === 1) {
+      _treePan.x = _touches.px + (e.touches[0].clientX - _touches.sx);
+      _treePan.y = _touches.py + (e.touches[0].clientY - _touches.sy);
+      _applyTreeTransform();
+    } else if (_touches.t === 2 && e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const d  = Math.hypot(dx, dy);
+      _treeScale = Math.min(2.5, Math.max(0.12, _touches.scale * (d / _touches.dist)));
+      _applyTreeTransform();
+    }
+    e.preventDefault();
+  }, { passive: false });
+  vp.addEventListener('touchend', () => { _touches = null; });
+})();
+
+// ── Add / Edit person ─────────────────────────────────────
+function _populateTreeSelects(excludeId) {
+  const opts = `<option value="">— אין / לא ידוע —</option>` +
+    _treePersons.filter(p => p.id !== excludeId)
+      .map(p => `<option value="${p.id}">${esc(p.nameHe || p.id)}</option>`).join('');
+  ['tp-father','tp-mother','tp-spouse'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = opts;
+  });
+}
+function openAddTreePerson() {
+  _editingTreeId = null;
+  resetForm('modal-tree-person');
+  document.getElementById('tp-photo-preview').style.display = 'none';
+  document.getElementById('tp-photo-data').value = '';
+  document.getElementById('tree-person-modal-title').textContent = '🌳 הוספת אדם לעץ';
+  document.getElementById('tp-save-btn').textContent = 'הוסף';
+  _populateTreeSelects(null);
+  openModal('modal-tree-person');
+}
+function editTreePerson(id) {
+  const p = _treePersons.find(x => x.id === id);
+  if (!p) return;
+  _editingTreeId = id;
+  closeTreePanel();
+  document.getElementById('tp-name-he').value    = p.nameHe    || '';
+  document.getElementById('tp-name-latin').value = p.nameLatin || '';
+  document.getElementById('tp-nickname').value   = p.nickname  || '';
+  document.getElementById('tp-maiden').value     = p.maidenName|| '';
+  document.getElementById('tp-gender').value     = p.gender    || 'm';
+  document.getElementById('tp-birth-year').value = p.birthYear || '';
+  document.getElementById('tp-birth-city').value = p.birthCity || '';
+  document.getElementById('tp-death-year').value = p.deathYear || '';
+  document.getElementById('tp-origin').value     = p.originCountry || '';
+  document.getElementById('tp-burial').value     = p.burialPlace   || '';
+  document.getElementById('tp-story').value      = p.story    || '';
+  document.getElementById('tp-photo-data').value = p.photoData|| '';
+  const prev = document.getElementById('tp-photo-preview');
+  if (p.photoData) { prev.src = p.photoData; prev.style.display = ''; }
+  else prev.style.display = 'none';
+  _populateTreeSelects(id);
+  document.getElementById('tp-father').value = p.fatherId  || '';
+  document.getElementById('tp-mother').value = p.motherId  || '';
+  document.getElementById('tp-spouse').value = p.spouseId  || '';
+  document.getElementById('tree-person-modal-title').textContent = '✏️ עריכת אדם';
+  document.getElementById('tp-save-btn').textContent = 'שמור';
+  openModal('modal-tree-person');
+}
+function tpPreviewPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      const size = 200;
+      c.width = c.height = size;
+      const ctx = c.getContext('2d');
+      const s = Math.min(img.width, img.height);
+      ctx.drawImage(img, (img.width-s)/2, (img.height-s)/2, s, s, 0, 0, size, size);
+      const data = c.toDataURL('image/jpeg', 0.75);
+      document.getElementById('tp-photo-data').value = data;
+      const prev = document.getElementById('tp-photo-preview');
+      prev.src = data; prev.style.display = '';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+async function saveTreePerson() {
+  if (!requireAuth()) return;
+  const nameHe = document.getElementById('tp-name-he').value.trim();
+  if (!nameHe) { showToast('נא למלא שם בעברית'); return; }
+  const payload = {
+    nameHe,
+    nameLatin:     document.getElementById('tp-name-latin').value.trim(),
+    nickname:      document.getElementById('tp-nickname').value.trim(),
+    maidenName:    document.getElementById('tp-maiden').value.trim(),
+    gender:        document.getElementById('tp-gender').value,
+    birthYear:     parseInt(document.getElementById('tp-birth-year').value) || null,
+    birthCity:     document.getElementById('tp-birth-city').value.trim(),
+    deathYear:     parseInt(document.getElementById('tp-death-year').value) || null,
+    originCountry: document.getElementById('tp-origin').value.trim(),
+    burialPlace:   document.getElementById('tp-burial').value.trim(),
+    story:         document.getElementById('tp-story').value.trim(),
+    photoData:     document.getElementById('tp-photo-data').value || null,
+    fatherId:      document.getElementById('tp-father').value || null,
+    motherId:      document.getElementById('tp-mother').value || null,
+    spouseId:      document.getElementById('tp-spouse').value || null,
+  };
+  const newSpouseId = document.getElementById('tp-spouse').value || null;
+  Object.keys(payload).forEach(k => {
+    if (payload[k] === null || payload[k] === '') {
+      if (_editingTreeId) payload[k] = firebase.firestore.FieldValue.delete();
+      else delete payload[k];
+    }
+  });
+  try {
+    if (_editingTreeId) {
+      await db.collection('familyTree').doc(_editingTreeId).update(payload);
+      if (newSpouseId) await db.collection('familyTree').doc(newSpouseId).update({ spouseId: _editingTreeId });
+      showToast('הרשומה עודכנה ✓');
+    } else {
+      payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      const ref = await db.collection('familyTree').add(payload);
+      if (newSpouseId) await db.collection('familyTree').doc(newSpouseId).update({ spouseId: ref.id });
+      showToast('נוסף לעץ המשפחתי ✓');
+    }
+    _editingTreeId = null;
+    closeModal('modal-tree-person');
+  } catch(e) { showToast('שגיאה: ' + e.message); }
+}
+async function deleteTreePerson(id) {
+  if (!requireAuth()) return;
+  if (!confirm('למחוק אדם זה מהעץ?')) return;
+  const p = _treePersons.find(x => x.id === id);
+  if (p?.spouseId) await db.collection('familyTree').doc(p.spouseId).update({ spouseId: firebase.firestore.FieldValue.delete() });
+  await db.collection('familyTree').doc(id).delete();
+  closeTreePanel();
+  showToast('נמחק מהעץ');
+}
+
+function openPersonDetail(id) {
+  applyTreeFocus(id);
+  openTreePanel(id);
+}
+</script>
+</body>
+</html>

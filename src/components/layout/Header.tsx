@@ -17,7 +17,6 @@ export function Header({ user, onUserClick }: HeaderProps) {
     (n.path !== '/' && location.pathname.startsWith(n.path))
   );
   const name = user?.displayName || user?.email || '';
-  const titleName = user?.displayName?.split(' ')[0] || '';
 
   return (
     <header className="glass-warm border-b border-border sticky top-0 z-40 flex items-center px-4 sm:px-6 h-14">
@@ -32,9 +31,7 @@ export function Header({ user, onUserClick }: HeaderProps) {
           <>
             <span className="text-lg hidden sm:inline" aria-hidden="true">{page.icon}</span>
             <h2 className="font-semibold text-primary text-base truncate">
-              {location.pathname === '/' && titleName
-                ? `שלום ${titleName} 👋`
-                : page.label}
+              {page.label}
             </h2>
           </>
         )}
