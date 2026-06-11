@@ -16,6 +16,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    // @hebcal/hdate ships a top-level-await Temporal polyfill loader (needs es2022+)
+    target: 'es2022',
     rollupOptions: {
       output: {
         manualChunks: {

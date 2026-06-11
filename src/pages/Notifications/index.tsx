@@ -7,16 +7,83 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
-import { Input, TextArea } from '@/components/ui/Input';
+import { Input, Select, TextArea } from '@/components/ui/Input';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useBirthdays } from '@/hooks/useBirthdays';
 import { useMemorials } from '@/hooks/useMemorials';
 import { useAnnouncements } from '@/hooks/useAnnouncements';
 import { useToast } from '@/components/ui/Toast';
-import { daysUntil } from '@/lib/utils';
+import {
+  type CalendarType,
+  daysUntilOccurrence,
+  formatAnnualItemDate,
+  nextOccurrence,
+  formatGregorianDate,
+  hebrewDayOptions,
+  hebrewMonthsOfYear,
+  hebrewYearOptions,
+  currentHebrewYear,
+} from '@/lib/dates';
 import type { User } from 'firebase/auth';
 
 interface NotificationsProps { user: User | null; isAdmin: boolean; }
+
+interface AnnualFormState {
+  name: string; date: string; notes: string;
+  calendarType: CalendarType;
+  hDay: number; hMonth: number; hYear: number;
+}
+
+/** Calendar-type choice + matching date entry (Gregorian MM-DD or Hebrew selects) */
+function AnnualDateFields({ form, setForm }: {
+  form: AnnualFormState;
+  setForm: React.Dispatch<React.SetStateAction<AnnualFormState>>;
+}) {
+  const hYearRef = form.hYear || currentHebrewYear();
+  return (
+    <>
+      <Select
+        label="סוג תאריך"
+        options={[
+          { value: 'gregorian', label: '📆 תאריך לועזי' },
+          { value: 'hebrew',    label: '🕎 תאריך עברי' },
+        ]}
+        value={form.calendarType}
+        onChange={e => setForm(f => ({ ...f, calendarType: e.target.value as CalendarType }))}
+      />
+      {form.calendarType === 'gregorian' ? (
+        <Input
+          label="תאריך (MM-DD)"
+          value={form.date}
+          onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+          placeholder="למשל 03-14"
+        />
+      ) : (
+        <div className="grid grid-cols-3 gap-2">
+          <Select
+            label="יום"
+            options={hebrewDayOptions(form.hMonth, hYearRef).map(o => ({ value: String(o.value), label: o.label }))}
+            value={String(form.hDay)}
+            onChange={e => setForm(f => ({ ...f, hDay: Number(e.target.value) }))}
+          />
+          <Select
+            label="חודש"
+            options={hebrewMonthsOfYear(hYearRef).map(o => ({ value: String(o.value), label: o.label }))}
+            value={String(form.hMonth)}
+            onChange={e => setForm(f => ({ ...f, hMonth: Number(e.target.value) }))}
+          />
+          <Select
+            label="שנה (אופציונלי)"
+            placeholder="לא ידוע"
+            options={hebrewYearOptions(currentHebrewYear() - 120, currentHebrewYear()).map(o => ({ value: String(o.value), label: o.label }))}
+            value={form.hYear ? String(form.hYear) : ''}
+            onChange={e => setForm(f => ({ ...f, hYear: Number(e.target.value) || 0 }))}
+          />
+        </div>
+      )}
+    </>
+  );
+}
 
 export function Notifications({ user, isAdmin }: NotificationsProps) {
   const { showToast } = useToast();
@@ -27,19 +94,24 @@ export function Notifications({ user, isAdmin }: NotificationsProps) {
   const [addBday, setAddBday] = useState(false);
   const [addMem, setAddMem] = useState(false);
   const [addAnn, setAddAnn] = useState(false);
-  const [bdayForm, setBdayForm] = useState({ name: '', date: '', notes: '' });
-  const [memForm,  setMemForm]  = useState({ name: '', date: '', notes: '' });
+  const emptyAnnualForm = {
+    name: '', date: '', notes: '',
+    calendarType: 'gregorian' as CalendarType,
+    hDay: 1, hMonth: 7, hYear: 0, // hYear 0 = "לא ידוע"
+  };
+  const [bdayForm, setBdayForm] = useState({ ...emptyAnnualForm });
+  const [memForm,  setMemForm]  = useState({ ...emptyAnnualForm, calendarType: 'hebrew' as CalendarType });
   const [annForm,  setAnnForm]  = useState({ text: '', expiresDate: '' });
   const [submitting, setSubmitting] = useState(false);
 
   const now = new Date();
   const upcomingBdays = birthdays
-    .map(b => ({ ...b, days: daysUntil(b.date) }))
+    .map(b => ({ ...b, days: daysUntilOccurrence(b, 'birthday'), next: nextOccurrence(b, 'birthday') }))
     .filter(b => b.days <= 60)
     .sort((a, b) => a.days - b.days);
 
   const upcomingMems = memorials
-    .map(m => ({ ...m, days: daysUntil(m.date) }))
+    .map(m => ({ ...m, days: daysUntilOccurrence(m, 'yahrzeit'), next: nextOccurrence(m, 'yahrzeit') }))
     .filter(m => m.days <= 90)
     .sort((a, b) => a.days - b.days);
 
@@ -48,26 +120,49 @@ export function Notifications({ user, isAdmin }: NotificationsProps) {
     return a.expiresAt.toDate() > now;
   });
 
+  function annualPayload(form: typeof bdayForm) {
+    const payload: Record<string, unknown> = {
+      name: form.name,
+      date: form.date,
+      notes: form.notes,
+      calendarType: form.calendarType,
+      createdAt: serverTimestamp(),
+    };
+    if (form.calendarType === 'hebrew') {
+      payload.hebrewDate = {
+        day: form.hDay,
+        month: form.hMonth,
+        ...(form.hYear ? { year: form.hYear } : {}),
+      };
+    }
+    return payload;
+  }
+
+  function validAnnualForm(form: typeof bdayForm): boolean {
+    if (!form.name) return false;
+    return form.calendarType === 'hebrew' ? !!(form.hDay && form.hMonth) : !!form.date;
+  }
+
   async function saveBirthday() {
-    if (!bdayForm.name || !bdayForm.date) { showToast('נא למלא שם ותאריך', 'error'); return; }
+    if (!validAnnualForm(bdayForm)) { showToast('נא למלא שם ותאריך', 'error'); return; }
     setSubmitting(true);
     try {
-      await addDoc(collection(db, 'birthdays'), { ...bdayForm, createdAt: serverTimestamp() });
+      await addDoc(collection(db, 'birthdays'), annualPayload(bdayForm));
       showToast('יום ההולדת נוסף ✓');
       setAddBday(false);
-      setBdayForm({ name: '', date: '', notes: '' });
+      setBdayForm({ ...emptyAnnualForm });
     } catch (e: unknown) { showToast((e as Error).message, 'error'); }
     finally { setSubmitting(false); }
   }
 
   async function saveMemorial() {
-    if (!memForm.name || !memForm.date) { showToast('נא למלא שם ותאריך', 'error'); return; }
+    if (!validAnnualForm(memForm)) { showToast('נא למלא שם ותאריך', 'error'); return; }
     setSubmitting(true);
     try {
-      await addDoc(collection(db, 'memorials'), { ...memForm, createdAt: serverTimestamp() });
+      await addDoc(collection(db, 'memorials'), annualPayload(memForm));
       showToast('יום הזיכרון נוסף ✓');
       setAddMem(false);
-      setMemForm({ name: '', date: '', notes: '' });
+      setMemForm({ ...emptyAnnualForm, calendarType: 'hebrew' });
     } catch (e: unknown) { showToast((e as Error).message, 'error'); }
     finally { setSubmitting(false); }
   }
@@ -165,6 +260,11 @@ export function Notifications({ user, isAdmin }: NotificationsProps) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm text-text-base">{b.name}</p>
+                    <p className="text-xs text-text-muted" dir="rtl">
+                      {formatAnnualItemDate(b)}
+                      {b.next ? ` · ${formatGregorianDate(b.next, 'short')}` : ''}
+                      {b.calendarType === 'hebrew' && ' 🕎'}
+                    </p>
                     {b.notes && <p className="text-xs text-text-muted">{b.notes}</p>}
                   </div>
                   <Badge variant={b.days <= 7 ? 'error' : b.days <= 14 ? 'warning' : 'default'}>
@@ -200,6 +300,11 @@ export function Notifications({ user, isAdmin }: NotificationsProps) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm text-text-base">{m.name}</p>
+                    <p className="text-xs text-text-muted" dir="rtl">
+                      {formatAnnualItemDate(m)}
+                      {m.next ? ` · ${formatGregorianDate(m.next, 'short')}` : ''}
+                      {m.calendarType === 'hebrew' && ' 🕎'}
+                    </p>
                     {m.notes && <p className="text-xs text-text-muted">{m.notes}</p>}
                   </div>
                   <Badge variant="memorial">
@@ -222,7 +327,7 @@ export function Notifications({ user, isAdmin }: NotificationsProps) {
         footer={<div className="flex gap-2 justify-end"><Button variant="outline" onClick={() => setAddBday(false)}>ביטול</Button><Button onClick={saveBirthday} loading={submitting}>הוסף</Button></div>}>
         <div className="space-y-3">
           <Input label="שם" value={bdayForm.name} onChange={e => setBdayForm(f => ({ ...f, name: e.target.value }))} placeholder="שם מלא" />
-          <Input label="תאריך (MM-DD)" value={bdayForm.date} onChange={e => setBdayForm(f => ({ ...f, date: e.target.value }))} placeholder="למשל 03-14" />
+          <AnnualDateFields form={bdayForm} setForm={setBdayForm} />
           <Input label="הערות" value={bdayForm.notes} onChange={e => setBdayForm(f => ({ ...f, notes: e.target.value }))} placeholder="אופציונלי" />
         </div>
       </Modal>
@@ -231,7 +336,7 @@ export function Notifications({ user, isAdmin }: NotificationsProps) {
         footer={<div className="flex gap-2 justify-end"><Button variant="outline" onClick={() => setAddMem(false)}>ביטול</Button><Button onClick={saveMemorial} loading={submitting}>הוסף</Button></div>}>
         <div className="space-y-3">
           <Input label="שם" value={memForm.name} onChange={e => setMemForm(f => ({ ...f, name: e.target.value }))} placeholder="שם המנוח/ה" />
-          <Input label="תאריך (MM-DD)" value={memForm.date} onChange={e => setMemForm(f => ({ ...f, date: e.target.value }))} placeholder="למשל 11-20" />
+          <AnnualDateFields form={memForm} setForm={setMemForm} />
           <Input label="הערות" value={memForm.notes} onChange={e => setMemForm(f => ({ ...f, notes: e.target.value }))} placeholder="אופציונלי" />
         </div>
       </Modal>

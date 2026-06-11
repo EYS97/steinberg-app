@@ -10,6 +10,9 @@ import { useToast } from '@/components/ui/Toast';
 import { claimAdmin, approveUser } from '@/hooks/useAdmin';
 import { useFamilies } from '@/hooks/useFamilies';
 import { openWhatsApp } from '@/lib/utils';
+import { formatGregorianDate, formatHebrewDate } from '@/lib/dates';
+import { ALL_SEUDOT, AUTO_ATTENDEES, AUTO_ATTENDEES_COUNT } from '@/types';
+import type { Seudah, SeudahRegistration } from '@/types';
 import type { User } from 'firebase/auth';
 
 const MOM_PHONE = '972545300361';
@@ -63,8 +66,8 @@ export function Settings({ user, isAdmin }: SettingsProps) {
       // Gather all data for the report
       const evSnap = await getDocs(collection(db, 'events'));
       const bkSnap = await getDocs(collection(db, 'bookings'));
-      const foodSnap = await getDocs(collection(db, 'food'));
-      const guestSnap = await getDocs(collection(db, 'guests'));
+      const seudotSnap = await getDocs(collection(db, 'seudot'));
+      const regSnap = await getDocs(collection(db, 'seudahRegistrations'));
 
       const now = new Date();
       const upcoming = evSnap.docs
@@ -77,7 +80,8 @@ export function Settings({ user, isAdmin }: SettingsProps) {
       if (upcoming.length > 0) {
         msg += '📅 *אירועים קרובים:*\n';
         upcoming.forEach(ev => {
-          msg += `• ${ev.title} — ${ev.date?.toDate?.().toLocaleDateString('he-IL') || ''}\n`;
+          const d = ev.date?.toDate?.();
+          msg += `• ${ev.title} — ${d ? `${formatGregorianDate(d, 'numeric')} (${formatHebrewDate(d)})` : ''}\n`;
         });
         msg += '\n';
       }
@@ -95,13 +99,39 @@ export function Settings({ user, isAdmin }: SettingsProps) {
         }
       }
 
-      const food = foodSnap.docs.map(d => d.data()).filter(f => f.eventId === (upcoming[0]?.id || ''));
-      if (food.length > 0) {
-        msg += `🍽 *ארוחות (${food.length} מנות):*\n`;
-        food.slice(0, 5).forEach(f => {
-          msg += `• ${f.dish} (${f.family})\n`;
+      // Seudot — Shabbat/holiday events are client-generated (not in Firestore),
+      // so resolve each seudah's event date from its eventId (shabbat-YYYY-MM-DD)
+      // or, for manual events, from the events collection.
+      const seudahEventDate = (eventId: string): Date | null => {
+        const m = eventId?.match(/(\d{4}-\d{2}-\d{2})$/);
+        if (m) return new Date(`${m[1]}T23:59:59`);
+        const ev = evSnap.docs.find(d => d.id === eventId)?.data();
+        return ev?.date?.toDate?.() ?? null;
+      };
+      const regs = regSnap.docs.map(d => ({ id: d.id, ...d.data() } as SeudahRegistration));
+      const upcomingSeudot = seudotSnap.docs
+        .map(d => ({ id: d.id, ...d.data() } as Seudah))
+        .map(s => ({ ...s, eventDate: seudahEventDate(s.eventId) }))
+        .filter(s => s.eventDate && s.eventDate >= now)
+        .sort((a, b) => (a.eventDate as Date).getTime() - (b.eventDate as Date).getTime());
+
+      if (upcomingSeudot.length > 0) {
+        // Report the nearest Shabbat/holiday that has seudot
+        const nextSeudotEventId = upcomingSeudot[0].eventId;
+        const eventSeudot = upcomingSeudot
+          .filter(s => s.eventId === nextSeudotEventId)
+          .sort((a, b) => ALL_SEUDOT.indexOf(a.type) - ALL_SEUDOT.indexOf(b.type));
+        msg += `🍽 *סעודות — ${upcomingSeudot[0].eventTitle}:*\n`;
+        eventSeudot.forEach(s => {
+          const sRegs = regs.filter(r => r.seudahId === s.id);
+          // Household residents + permanent guests are always at the table
+          const diners = AUTO_ATTENDEES_COUNT + sRegs.reduce((sum, r) => sum + (r.diners || 0), 0);
+          msg += `• ${s.type} — ${diners} סועדים\n`;
+          sRegs.forEach(r => {
+            msg += `   - משפחת ${r.familyName} (${r.diners})${r.bringing ? ` · מביאים: ${r.bringing}` : ''}\n`;
+          });
         });
-        if (food.length > 5) msg += `...ועוד ${food.length - 5} מנות\n`;
+        msg += `_כולל ${AUTO_ATTENDEES_COUNT} קבועים: ${AUTO_ATTENDEES.map(p => p.name).join(', ')}_\n`;
       }
 
       openWhatsApp(MOM_PHONE, msg);

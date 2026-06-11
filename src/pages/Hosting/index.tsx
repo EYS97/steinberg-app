@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Plus, MapPin, Users, CheckCircle, XCircle, Clock, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -38,9 +39,11 @@ export function Hosting({ user, isAdmin }: HostingProps) {
   const { data: events } = useEvents();
   const { data: families } = useFamilies();
 
-  const [tab, setTab] = useState<Tab>('open');
+  // Deep links from the Home action bar: { tab } or { openWizard }
+  const navState = (useLocation().state ?? {}) as { tab?: Tab; openWizard?: boolean };
+  const [tab, setTab] = useState<Tab>(navState.tab && navState.tab !== 'admin' ? navState.tab : 'open');
   const [filterEventId, setFilterEventId] = useState('');
-  const [hostWizard, setHostWizard] = useState(false);
+  const [hostWizard, setHostWizard] = useState(!!navState.openWizard);
   const [guestModal, setGuestModal] = useState(false);
   const [selectedAvail, setSelectedAvail] = useState<HostingAvailability | null>(null);
 

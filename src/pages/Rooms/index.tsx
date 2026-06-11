@@ -15,7 +15,9 @@ import {
 } from '@/hooks/useBookings';
 import { useFamilies } from '@/hooks/useFamilies';
 import { useToast } from '@/components/ui/Toast';
-import { ROOMS } from '@/types';
+import { useCalendarMode } from '@/hooks/useCalendarMode';
+import { formatDateByMode } from '@/lib/dates';
+import { ROOMS, SHABBAT_SEUDOT, HOLIDAY_SEUDOT, permanentOccupants, availableBeds } from '@/types';
 import { setDoc, doc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import type { User } from 'firebase/auth';
@@ -25,20 +27,20 @@ interface RoomsProps {
   isAdmin: boolean;
 }
 
-const MEAL_OPTIONS = ['ליל שישי', 'צהריים שבת', 'שניהם'];
-
 export function Rooms({ user, isAdmin }: RoomsProps) {
   const { showToast } = useToast();
   const { data: events, loading: evLoading } = useEvents();
   const { data: families } = useFamilies();
   const locks = useLocks();
   const closedEventIds = useClosedEvents();
+  const [calMode] = useCalendarMode();
 
   const upcomingEvents = events.filter(e => e.date?.toDate?.() >= new Date());
   const [selectedEventId, setSelectedEventId] = useState('');
   const eventId = selectedEventId || upcomingEvents[0]?.id || '';
   const event = events.find(e => e.id === eventId);
   const isClosed = closedEventIds.includes(eventId);
+  const seudahOptions = event?.type === 'holiday' ? HOLIDAY_SEUDOT : SHABBAT_SEUDOT;
 
   const { bookings, loading: bkLoading } = useBookingsForEvent(eventId);
   const { bookings: allBookings } = useAllBookings();
@@ -59,7 +61,7 @@ export function Rooms({ user, isAdmin }: RoomsProps) {
 
   const eventOptions = upcomingEvents.map(e => ({
     value: e.id,
-    label: `${e.title} — ${e.date?.toDate?.().toLocaleDateString('he-IL') || ''}`,
+    label: `${e.title} — ${formatDateByMode(e.date?.toDate?.() ?? null, calMode, 'short')}`,
   }));
 
   function openBook(roomId: string) {
@@ -75,6 +77,13 @@ export function Rooms({ user, isAdmin }: RoomsProps) {
     if (!fname) { showToast('נא לבחור משפחה', 'error'); return; }
     if (bookings.find(b => b.roomId === selectedRoomId)) {
       showToast('החדר כבר מוזמן לאירוע זה', 'error'); return;
+    }
+    // Beds taken by permanent residents are not available for guests
+    const room = ROOMS.find(r => r.id === selectedRoomId);
+    if (room && form.adults > availableBeds(room)) {
+      const occ = permanentOccupants(room.id).map(o => o.name).join(', ');
+      showToast(`בחדר זה גר/ה ${occ} באופן קבוע — נותרו ${availableBeds(room)} מיטות לאורחים`, 'error');
+      return;
     }
     setSubmitting(true);
     try {
@@ -132,6 +141,10 @@ export function Rooms({ user, isAdmin }: RoomsProps) {
     value: f.id,
     label: [f.husband, f.wife].filter(Boolean).join(' ו') || f.id,
   }));
+
+  const selectedRoom = ROOMS.find(r => r.id === selectedRoomId);
+  const selectedRoomOccupants = selectedRoom ? permanentOccupants(selectedRoom.id) : [];
+  const selectedRoomBeds = selectedRoom ? availableBeds(selectedRoom) : 0;
 
   const toggleMeal = (meal: string) => {
     setForm(f => ({
@@ -231,6 +244,11 @@ export function Rooms({ user, isAdmin }: RoomsProps) {
                   {room.hasCrib && (
                     <p className="text-xs text-amber-600 mt-0.5">🍼 עריסה זמינה</p>
                   )}
+                  {permanentOccupants(room.id).length > 0 && (
+                    <p className="text-xs text-primary mt-0.5">
+                      🏠 דייר/ת קבוע/ה: {permanentOccupants(room.id).map(o => o.name).join(', ')} · נותרו {availableBeds(room)} מיטות לאורחים
+                    </p>
+                  )}
 
                   <div className="mt-3">
                     {isLocked ? (
@@ -325,6 +343,12 @@ export function Rooms({ user, isAdmin }: RoomsProps) {
         }
       >
         <div className="space-y-4">
+          {selectedRoomOccupants.length > 0 && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-text-mid">
+              🏠 בחדר זה גר/ה באופן קבוע: <strong>{selectedRoomOccupants.map(o => o.name).join(', ')}</strong>
+              <span className="text-text-muted"> · {selectedRoomBeds} מיטות פנויות לאורחים</span>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -364,7 +388,7 @@ export function Rooms({ user, isAdmin }: RoomsProps) {
               label="מבוגרים"
               type="number"
               min={1}
-              max={6}
+              max={selectedRoomBeds || 6}
               value={form.adults}
               onChange={e => setForm(f => ({ ...f, adults: Number(e.target.value) }))}
             />
@@ -379,9 +403,9 @@ export function Rooms({ user, isAdmin }: RoomsProps) {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-text-mid mb-2 block">השתתפות בארוחות</label>
+            <label className="text-sm font-medium text-text-mid mb-2 block">השתתפות בסעודות</label>
             <div className="flex flex-wrap gap-2">
-              {MEAL_OPTIONS.map(m => (
+              {seudahOptions.map(m => (
                 <button
                   key={m}
                   type="button"
