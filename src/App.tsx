@@ -36,7 +36,7 @@ import { ToastProvider } from '@/components/ui/Toast';
 import { Home }         from '@/pages/Home';
 import { Calendar }     from '@/pages/Calendar';
 import { Rooms }        from '@/pages/Rooms';
-import { Meals }        from '@/pages/Meals';
+import { Seudot }       from '@/pages/Seudot';
 import { Hosting }      from '@/pages/Hosting';
 import { FamilyPage }   from '@/pages/Family';
 import { FamilyTree }   from '@/pages/FamilyTree';
@@ -59,7 +59,8 @@ function AppRoutes() {
         <Route path="/"             element={<Home {...props} />} />
         <Route path="/calendar"     element={<Calendar {...props} />} />
         <Route path="/rooms"        element={<Rooms {...props} />} />
-        <Route path="/meals"        element={<Meals {...props} />} />
+        <Route path="/seudot"       element={<Seudot {...props} />} />
+        <Route path="/meals"        element={<Navigate to="/seudot" replace />} />
         <Route path="/hosting"      element={<Hosting {...props} />} />
         <Route path="/family"       element={<FamilyPage {...props} />} />
         <Route path="/family-tree"  element={<FamilyTree />} />

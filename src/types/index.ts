@@ -43,6 +43,45 @@ export const ROOMS: Room[] = [
   { id: 'hayechida',name: 'היחידה',    icon: '🏠', cap: 'זוג + תינוק',        detail: 'כניסה עצמאית',                   maxAdults: 2, hasCrib: true },
 ];
 
+// ── Permanent attendees (household residents + permanent guest) ───────────
+/** A person automatically counted in every seudah — never registered manually */
+export interface PermanentAttendee {
+  name: string;
+  /** Household resident (lives at home) vs external permanent guest */
+  isResident: boolean;
+  /** Room the resident permanently occupies — its beds are not bookable */
+  roomId?: string;
+  /** Beds taken in that room (default 1) */
+  beds?: number;
+}
+
+export const HOUSEHOLD_RESIDENTS: PermanentAttendee[] = [
+  { name: 'אבא',   isResident: true },
+  { name: 'אמא',   isResident: true },
+  { name: 'פנינה', isResident: true, roomId: 'penina', beds: 1 },
+  { name: 'סבא',   isResident: true, roomId: 'israel', beds: 1 },
+];
+
+/** External permanent guests — counted in every seudah but never sleep over */
+export const PERMANENT_GUESTS: PermanentAttendee[] = [
+  { name: 'לושה', isResident: false },
+];
+
+export const AUTO_ATTENDEES: PermanentAttendee[] = [...HOUSEHOLD_RESIDENTS, ...PERMANENT_GUESTS];
+/** Base attendance of every seudah before any registrations */
+export const AUTO_ATTENDEES_COUNT = AUTO_ATTENDEES.length;
+
+/** Residents permanently occupying the given room */
+export function permanentOccupants(roomId: string): PermanentAttendee[] {
+  return HOUSEHOLD_RESIDENTS.filter(p => p.roomId === roomId);
+}
+
+/** Beds left for guest assignment after permanent occupants */
+export function availableBeds(room: Room): number {
+  const taken = permanentOccupants(room.id).reduce((s, p) => s + (p.beds ?? 1), 0);
+  return Math.max(0, room.maxAdults - taken);
+}
+
 // ── Booking ───────────────────────────────────────────────────────────────
 export interface Booking {
   id: string;
@@ -84,7 +123,7 @@ export interface AppEvent {
   sourceId?: string;
 }
 
-// ── Food ──────────────────────────────────────────────────────────────────
+// ── Food (legacy — old dish coordination, kept for the `food` collection) ──
 export type MealType = 'ליל שישי' | 'צהריים שבת' | 'ערב שבת';
 export type FoodCategory = 'מנות ראשונות' | 'עיקריות' | 'קינוחים' | 'שתייה' | 'כללי';
 
@@ -100,6 +139,58 @@ export interface FoodItem {
   eventId: string;
   eventTitle: string;
   createdAt?: Timestamp;
+}
+
+// ── Seudot (Shabbat & Holiday seudot hosting) ─────────────────────────────
+export type SeudahType =
+  | 'סעודת ערב שבת'
+  | 'סעודת שבת'
+  | 'סעודה שלישית'
+  | 'ערב חג'
+  | 'סעודת חג';
+
+export const SHABBAT_SEUDOT: SeudahType[] = ['סעודת ערב שבת', 'סעודת שבת', 'סעודה שלישית'];
+export const HOLIDAY_SEUDOT: SeudahType[] = ['ערב חג', 'סעודת חג'];
+export const ALL_SEUDOT: SeudahType[] = [...SHABBAT_SEUDOT, ...HOLIDAY_SEUDOT];
+
+export const SEUDAH_ICONS: Record<SeudahType, string> = {
+  'סעודת ערב שבת': '🕯',
+  'סעודת שבת':     '☀️',
+  'סעודה שלישית':  '🌅',
+  'ערב חג':        '🕯',
+  'סעודת חג':      '✨',
+};
+
+/** "What are you bringing?" quick-pick options; 'אחר' enables free text */
+export const BRINGING_OPTIONS = ['קינוח', 'מנה עיקרית', 'סלט', 'שתייה', 'אחר'] as const;
+
+export interface Seudah {
+  id: string;
+  eventId: string;
+  eventTitle: string;
+  type: SeudahType;
+  createdAt?: Timestamp;
+  createdBy?: string;
+}
+
+/**
+ * A nuclear-family registration to a single seudah. Attending seudot is
+ * independent of sleeping over (rooms/hosting) — no host approval needed.
+ */
+export interface SeudahRegistration {
+  id: string;
+  seudahId: string;
+  eventId: string;
+  familyId: string;
+  familyName: string;
+  adults: number;
+  kids: number;
+  /** Total diners — adults + kids, counted automatically from the family record */
+  diners: number;
+  /** Optional "what are we bringing" note, e.g. "קינוח – עוגת שוקולד" */
+  bringing?: string;
+  createdAt?: Timestamp;
+  createdBy?: string;
 }
 
 // ── Guests ────────────────────────────────────────────────────────────────
@@ -235,7 +326,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'home',          label: 'בית',       icon: '🏠', path: '/',              showInMobile: true },
   { id: 'calendar',      label: 'לוח שנה',   icon: '📅', path: '/calendar',      showInMobile: true },
   { id: 'rooms',         label: 'חדרים',      icon: '🛏', path: '/rooms',         showInMobile: false },
-  { id: 'meals',         label: 'ארוחות',     icon: '🍲', path: '/meals',         showInMobile: false },
+  { id: 'seudot',        label: 'סעודות',     icon: '🍽', path: '/seudot',        showInMobile: false },
   { id: 'hosting',       label: 'אירוחים',    icon: '🏡', path: '/hosting',       showInMobile: true },
   { id: 'family',        label: 'משפחה',      icon: '👨‍👩‍👧‍👦', path: '/family',        showInMobile: true },
   { id: 'family-tree',   label: 'עץ משפחה',  icon: '🌳', path: '/family-tree',   showInMobile: false },

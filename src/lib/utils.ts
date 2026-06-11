@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { formatGregorianDate, daysUntilOccurrence } from '@/lib/dates';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -26,23 +27,15 @@ export function avatarColor(name: string): string {
 }
 
 export function formatDate(date: Date | null | undefined): string {
-  if (!date) return '';
-  return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
+  return formatGregorianDate(date, 'long');
 }
 
 export function formatDateShort(date: Date | null | undefined): string {
-  if (!date) return '';
-  return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
+  return formatGregorianDate(date, 'short');
 }
 
 export function formatDateFull(date: Date | null | undefined): string {
-  if (!date) return '';
-  return date.toLocaleDateString('he-IL', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+  return formatGregorianDate(date, 'full');
 }
 
 export function relativeDate(date: Date): string {
@@ -56,40 +49,9 @@ export function relativeDate(date: Date): string {
   return formatDateShort(date);
 }
 
-// Normalise a birthday/memorial date to a JS Date (month+day only, next occurrence).
-// Accepts: ISO string "YYYY-MM-DD", Firestore Timestamp (has .toDate()), or plain Date.
-function normaliseBdayDate(input: unknown): Date | null {
-  if (!input) return null;
-  let base: Date | null = null;
-  if (typeof input === 'string') {
-    const parts = input.split('-').map(Number);
-    const m = parts[parts.length - 2];
-    const d = parts[parts.length - 1];
-    if (!m || !d) return null;
-    base = new Date(new Date().getFullYear(), m - 1, d);
-  } else if (typeof (input as any).toDate === 'function') {
-    base = (input as any).toDate() as Date;
-  } else if (input instanceof Date) {
-    base = input;
-  } else {
-    return null;
-  }
-  const now = new Date(); now.setHours(0, 0, 0, 0);
-  const occ = new Date(now.getFullYear(), base.getMonth(), base.getDate());
-  if (occ < now) occ.setFullYear(now.getFullYear() + 1);
-  return occ;
-}
-
-export function isoToHeDate(iso: unknown): string {
-  const d = normaliseBdayDate(iso);
-  return d ? formatDate(d) : '';
-}
-
+/** @deprecated legacy Gregorian-only path — prefer daysUntilOccurrence from '@/lib/dates' */
 export function daysUntil(dateInput: unknown): number {
-  const d = normaliseBdayDate(dateInput);
-  if (!d) return 999;
-  const now = new Date(); now.setHours(0, 0, 0, 0);
-  return Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  return daysUntilOccurrence({ date: dateInput });
 }
 
 export function familyDisplayName(family: { husband: string; wife: string }): string {

@@ -1,6 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { orderBy, Timestamp } from 'firebase/firestore';
 import { useFirestoreCollection } from './useFirestoreCollection';
+import {
+  convertGregorianToHebrew,
+  getRecurringHebrewDateOccurrences,
+  getRecurringGregorianOccurrences,
+  parseHebrewDateParts,
+  formatGregorianDate,
+} from '@/lib/dates';
 import type { AppEvent, EventType } from '@/types';
 
 // The old vanilla-JS app never stored Shabbat/holiday events in Firestore — it
@@ -61,7 +68,7 @@ function generateShabbatot(parashot: Record<string, string>): AppEvent[] {
       id: `shabbat-${dateStr}`,
       title: parasha
         ? `שבת פרשת ${parasha}`
-        : `שבת ${d.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' })}`,
+        : `שבת ${formatGregorianDate(d, 'short')}`,
       date: Timestamp.fromDate(new Date(`${dateStr}T12:00:00`)),
       type: 'shabbat',
       notes: '',
@@ -96,6 +103,38 @@ const TYPE_NORM: Record<string, EventType> = {
   'אירוח': 'hosting',
 };
 
+// Expand an annually-recurring event into occurrences inside the app's window.
+// Hebrew-anchored events recur by the Hebrew calendar (e.g. a yahrzeit on
+// כ׳ בכסלו falls on a different Gregorian date every year).
+function expandRecurring(ev: AppEvent): AppEvent[] {
+  const base = ev.date?.toDate?.();
+  if (!ev.recurrenceCalendar || !base) return [ev];
+
+  const start = new Date(); start.setMonth(start.getMonth() - 6);
+  const end = new Date(); end.setMonth(end.getMonth() + 13);
+
+  const occurrences = ev.recurrenceCalendar === 'hebrew'
+    ? getRecurringHebrewDateOccurrences(
+        parseHebrewDateParts(ev.hebrewDate) ?? convertGregorianToHebrew(base),
+        start, end,
+        ev.type === 'memorial' ? 'yahrzeit' : 'birthday'
+      )
+    : getRecurringGregorianOccurrences(base.getMonth() + 1, base.getDate(), start, end);
+
+  const out: AppEvent[] = [ev];
+  for (const g of occurrences) {
+    if (g.toDateString() === base.toDateString()) continue;
+    const dateStr = fmt(g);
+    out.push({
+      ...ev,
+      id: `${ev.id}__${dateStr}`,
+      sourceId: ev.id,
+      date: Timestamp.fromDate(new Date(`${dateStr}T12:00:00`)),
+    });
+  }
+  return out;
+}
+
 export function useEvents() {
   const { data: manual, loading, error } = useFirestoreCollection<AppEvent>('events', [orderBy('date')]);
   const [hebcal, setHebcal] = useState<HebcalData>({ parashot: {}, holidays: [] });
@@ -112,9 +151,12 @@ export function useEvents() {
 
     // Manual Firestore events take priority on their date
     manual.forEach(ev => {
-      const d = ev.date?.toDate?.();
-      if (d) taken.add(d.toDateString());
-      out.push({ ...ev, type: TYPE_NORM[ev.type as string] ?? ev.type });
+      const normalized = { ...ev, type: TYPE_NORM[ev.type as string] ?? ev.type };
+      for (const occ of expandRecurring(normalized)) {
+        const d = occ.date?.toDate?.();
+        if (d) taken.add(d.toDateString());
+        out.push(occ);
+      }
     });
 
     // Then Hebcal holidays, then Shabbatot fill the remaining dates
