@@ -1,6 +1,6 @@
-import React from 'react';
-import { AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
+import React, { useState } from 'react';
+import { AlertTriangle, CheckCircle2, ChevronDown } from 'lucide-react';
+import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { formatDayLabel } from '@/lib/august/plan';
 import type { AugustIssue } from '@/lib/august/issues';
@@ -9,25 +9,50 @@ interface IssuesPanelProps {
   issues: AugustIssue[];
   /** Jump to a day when an issue is clicked. */
   onOpenDay: (date: string) => void;
+  /** Start expanded? Defaults to collapsed — the list can get long. */
+  defaultOpen?: boolean;
 }
 
-/** The "דורש סגירה" panel — auto-generated open issues, red first. */
-export function IssuesPanel({ issues, onOpenDay }: IssuesPanelProps) {
-  return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle>
-          <AlertTriangle size={18} className="text-warning" /> דורש סגירה
-          {issues.length > 0 && <Badge variant="warning">{issues.length}</Badge>}
-        </CardTitle>
-      </CardHeader>
+/** The "דורש סגירה" panel — auto-generated open issues, red first. Collapsed by
+ *  default so the long list never dominates the screen; a click reveals it. */
+export function IssuesPanel({ issues, onOpenDay, defaultOpen = false }: IssuesPanelProps) {
+  const [open, setOpen] = useState(defaultOpen);
 
-      {issues.length === 0 ? (
-        <p className="text-sm text-success flex items-center gap-1.5">
+  // All clear — a small reassuring line, nothing to collapse.
+  if (issues.length === 0) {
+    return (
+      <Card className="mb-6">
+        <div className="flex items-center gap-2">
+          <AlertTriangle size={18} className="text-warning" />
+          <h3 className="text-h3 font-semibold text-primary">דורש סגירה</h3>
+        </div>
+        <p className="mt-2 text-sm text-success flex items-center gap-1.5">
           <CheckCircle2 size={16} /> אין בעיות פתוחות — הכול מסודר 🎉
         </p>
-      ) : (
-        <ul className="space-y-1.5">
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="mb-6">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between gap-2 text-right"
+        aria-expanded={open}
+      >
+        <span className="flex items-center gap-2">
+          <AlertTriangle size={18} className="text-warning" />
+          <span className="text-h3 font-semibold text-primary">דורש סגירה</span>
+          <Badge variant="warning">{issues.length}</Badge>
+        </span>
+        <span className="flex items-center gap-1 text-xs text-text-muted">
+          {open ? 'הסתר' : 'הצג'}
+          <ChevronDown size={18} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+        </span>
+      </button>
+
+      {open && (
+        <ul className="space-y-1.5 mt-3">
           {issues.map(issue => (
             <li key={issue.id}>
               <button
