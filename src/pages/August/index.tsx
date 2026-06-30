@@ -271,6 +271,8 @@ export function August({ user, isAdmin }: AugustProps) {
                 statusOf={statusOf}
                 weeklyCost={weeklyCost[weeks[weekIdx].index] ?? 0}
                 avatarFor={avatarFor}
+                winStart={plan?.coverageStart ?? '08:00'}
+                winEnd={plan?.coverageEnd ?? '20:00'}
                 onOpenDay={setOpenDay}
               />
             )
@@ -387,11 +389,13 @@ interface WeekDashboardProps {
   statusOf: (date: string) => DayStatus;
   weeklyCost: number;
   avatarFor: (memberId: string) => string | null;
+  winStart: string;
+  winEnd: string;
   onOpenDay: (date: string) => void;
 }
 
 function WeekDashboard({
-  week, members, itemsByDay, issuesByDate, issues, statusOf, weeklyCost, avatarFor, onOpenDay,
+  week, members, itemsByDay, issuesByDate, issues, statusOf, weeklyCost, avatarFor, winStart, winEnd, onOpenDay,
 }: WeekDashboardProps) {
   // Per-week health counts — only days with activity count toward covered/gaps
   // (an empty day is "not yet planned", not a failure — mirrors summarize()).
@@ -417,6 +421,8 @@ function WeekDashboard({
             dayItems={itemsByDay.get(day.date) ?? []}
             issues={issuesByDate.get(day.date) ?? []}
             avatarFor={avatarFor}
+            winStart={winStart}
+            winEnd={winEnd}
             onOpen={() => onOpenDay(day.date)}
           />
         ))}

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   itemsOnDate, blockGeometry, axisTicks, orderedMembers,
-  transportationForDay, dayBadge,
+  transportationForDay, dayBadge, coverageSegments, parentTimeline,
 } from './dayView';
 import type { AugustMember, AugustTimelineItem } from '@/types/august';
 import type { AugustIssue } from './issues';
@@ -79,6 +79,68 @@ describe('transportationForDay', () => {
   });
   it('omits legs with no assigned driver', () => {
     expect(transportationForDay([item({})], '2026-08-12', members)).toHaveLength(0);
+  });
+});
+
+describe('coverageSegments', () => {
+  it('builds a handoff timeline with a trailing gap', () => {
+    // camp 08–14, grandma 14–17 → covered 08–17, gap 17–20
+    const items = [
+      item({ startTime: '08:00', endTime: '14:00', title: 'קייטנה' }),
+      item({ type: 'סבתא', title: 'סבתא', startTime: '14:00', endTime: '17:00' }),
+    ];
+    const segs = coverageSegments(items, '2026-08-12', 'adi', members, '08:00', '20:00');
+    expect(segs.map(s => [s.start, s.end, s.covered])).toEqual([
+      ['08:00', '14:00', true],
+      ['14:00', '17:00', true],
+      ['17:00', '20:00', false],
+    ]);
+    // gap geometry: starts at 75% of a 12h window, spans the final 25%
+    const gap = segs[2];
+    expect(gap.leftPct).toBeCloseTo(75);
+    expect(gap.widthPct).toBeCloseTo(25);
+  });
+
+  it('labels a parent-care slot by the responsible adult, camp by its title', () => {
+    const items = [
+      item({ startTime: '08:00', endTime: '14:00', title: 'קייטנת ים' }),
+      item({ type: 'בית', title: 'בבית', startTime: '14:00', endTime: '20:00', responsiblePersonId: 'dad' }),
+    ];
+    const segs = coverageSegments(items, '2026-08-12', 'adi', members, '08:00', '20:00');
+    expect(segs[0].label).toBe('קייטנת ים');
+    expect(segs[1].label).toBe('אלי'); // dad's name, not "בבית"
+  });
+
+  it('yields a single full-window gap when nothing covers the child', () => {
+    const segs = coverageSegments([], '2026-08-12', 'adi', members);
+    expect(segs).toEqual([
+      expect.objectContaining({ start: '08:00', end: '20:00', covered: false, leftPct: 0, widthPct: 100 }),
+    ]);
+  });
+
+  it('ignores work (a parent-occupying type never covers a child)', () => {
+    const items = [item({ type: 'עבודה', title: 'עבודה', startTime: '08:00', endTime: '20:00' })];
+    const segs = coverageSegments(items, '2026-08-12', 'adi', members);
+    expect(segs.every(s => !s.covered)).toBe(true);
+  });
+});
+
+describe('parentTimeline', () => {
+  it('splits a parent day into muted work and prominent responsibility', () => {
+    const items = [
+      item({ personId: 'dad', type: 'עבודה', title: 'עבודה', startTime: '08:00', endTime: '17:00' }),
+      item({ personId: 'adi', type: 'בית', title: 'בבית', startTime: '17:00', endTime: '20:00', responsiblePersonId: 'dad' }),
+    ];
+    const tl = parentTimeline(items, '2026-08-12', 'dad', '08:00', '20:00');
+    expect(tl.work.map(b => [b.start, b.end])).toEqual([['08:00', '17:00']]);
+    expect(tl.responsibility.map(b => [b.start, b.end])).toEqual([['17:00', '20:00']]);
+  });
+
+  it('does not mark a merely-not-working parent as responsible', () => {
+    const items = [item({ personId: 'dad', type: 'חופש מהעבודה', title: 'חופש', startTime: '08:00', endTime: '20:00' })];
+    const tl = parentTimeline(items, '2026-08-12', 'dad', '08:00', '20:00');
+    expect(tl.work).toHaveLength(0);
+    expect(tl.responsibility).toHaveLength(0);
   });
 });
 

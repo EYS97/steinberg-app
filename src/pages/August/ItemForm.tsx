@@ -76,6 +76,11 @@ export function ItemForm({
   const optionalPersonOptions = [{ value: '', label: '— ללא —' }, ...personOptions];
   const timeRequired = TIME_REQUIRED_TYPES.includes(form.type);
   const isMultiDay = !!form.endDate && form.endDate > form.date;
+  // A family vacation belongs to everyone — when adding, we lock the person field
+  // and fan the item out to every member on save (editing one instance stays
+  // single, so you can tweak just that person's copy).
+  const isFamilyHoliday = form.type === 'חופשה משפחתית';
+  const applyToAll = isFamilyHoliday && !editing;
 
   function toggleDay(dow: number) {
     setForm(f => {
@@ -86,7 +91,8 @@ export function ItemForm({
   }
 
   async function submit() {
-    if (!form.personId) { showToast('נא לבחור בן משפחה', 'error'); return; }
+    if (!applyToAll && !form.personId) { showToast('נא לבחור בן משפחה', 'error'); return; }
+    if (applyToAll && members.length === 0) { showToast('אין בני משפחה להוסיף', 'error'); return; }
     if (!form.title.trim()) { showToast('נא להזין כותרת', 'error'); return; }
     const s = timeToMinutes(form.startTime);
     const e = timeToMinutes(form.endTime);
@@ -111,7 +117,23 @@ export function ItemForm({
     };
     setSaving(true);
     try {
-      await onSubmit(payload);
+      if (applyToAll) {
+        // One copy per member. Cost is a single family total — attach it to the
+        // first copy only so the rollup doesn't multiply it by member count.
+        // Drop person-specific transport assignments for the blanket vacation.
+        for (let i = 0; i < members.length; i++) {
+          await onSubmit({
+            ...payload,
+            personId: members[i].id,
+            cost: i === 0 ? payload.cost : undefined,
+            responsiblePersonId: undefined,
+            dropOffPersonId: undefined,
+            pickUpPersonId: undefined,
+          });
+        }
+      } else {
+        await onSubmit(payload);
+      }
       onClose();
     } catch (err) {
       showToast((err as Error).message || 'שמירה נכשלה', 'error');
@@ -135,13 +157,26 @@ export function ItemForm({
     >
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
-          <Select
-            label="בן משפחה"
-            options={personOptions}
-            value={form.personId}
-            onChange={e => set('personId', e.target.value)}
-            placeholder="בחר..."
-          />
+          {applyToAll ? (
+            <div className="flex flex-col gap-1">
+              <Select
+                label="בן משפחה"
+                options={[{ value: '__all__', label: '👨‍👩‍👧‍👦 כל המשפחה' }]}
+                value="__all__"
+                onChange={() => {}}
+                disabled
+              />
+              <p className="text-xs text-text-muted">החופשה תתווסף לכל בני המשפחה</p>
+            </div>
+          ) : (
+            <Select
+              label="בן משפחה"
+              options={personOptions}
+              value={form.personId}
+              onChange={e => set('personId', e.target.value)}
+              placeholder="בחר..."
+            />
+          )}
           <Select
             label="סוג"
             options={TYPE_OPTIONS}

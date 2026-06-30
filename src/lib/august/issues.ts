@@ -215,8 +215,19 @@ export function detectIssues(
     }
   }
 
-  const rank = (s: IssueSeverity) => (s === 'red' ? 0 : 1);
-  return issues.sort((a, b) => a.date.localeCompare(b.date) || rank(a.severity) - rank(b.severity));
+  // Priority ladder for the "דורש סגירה" center: child coverage gaps first,
+  // then parent conflicts, scheduling overlaps, and finally transportation
+  // (pickup before dropoff). Within a kind, earliest date first.
+  const kindRank: Record<IssueKind, number> = {
+    coverage_gap: 0,
+    conflict: 1,
+    overlap: 2,
+    missing_pickup: 3,
+    missing_dropoff: 4,
+  };
+  return issues.sort(
+    (a, b) => kindRank[a.kind] - kindRank[b.kind] || a.date.localeCompare(b.date)
+  );
 }
 
 /** Status for one day given its issues and whether it has any items. */
