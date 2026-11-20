@@ -259,8 +259,19 @@ export function TreeCanvas({
     };
   }, [applyTransform]);
 
+  // Zoom around the viewport centre (like the wheel zooms around the cursor),
+  // so +/− keep what you're looking at on screen instead of drifting to a corner.
   const zoomBy = (delta: number) => {
-    view.current.scale = Math.min(2.5, Math.max(0.12, view.current.scale + delta));
+    const v = view.current;
+    const prev = v.scale;
+    v.scale = Math.min(2.5, Math.max(0.12, prev + delta));
+    const vp = wrapRef.current;
+    if (vp) {
+      const ratio = v.scale / prev;
+      const cx = vp.clientWidth / 2, cy = vp.clientHeight / 2;
+      v.x = cx - (cx - v.x) * ratio;
+      v.y = cy - (cy - v.y) * ratio;
+    }
     applyTransform();
   };
 

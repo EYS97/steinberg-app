@@ -112,6 +112,9 @@
 
 .app-content {
   flex: 1;
+  /* Flex items default to min-width:auto, which lets a wide child (the tree
+     header, the report) stretch <main> past the viewport on phones. */
+  min-width: 0;
   margin-right: var(--sidebar-width);
   min-height: 100vh;
   display: flex;

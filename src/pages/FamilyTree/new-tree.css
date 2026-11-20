@@ -69,6 +69,20 @@
 .nt-add-btn:hover { background: var(--accent); color: #fff; }
 .nt-header { position: relative; }
 
+/* Phones: the segmented control is wider than the screen — keep it on one
+   line but let it scroll inside itself instead of widening the page. */
+@media (max-width: 640px) {
+  .nt-header { padding: 16px 16px 12px; }
+  .nt-title-he { font-size: 24px; }
+  .nt-title-en { letter-spacing: 2.5px; }
+  .nt-views {
+    display: flex; max-width: 100%;
+    overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .nt-views::-webkit-scrollbar { display: none; }
+  .nt-view-btn, .nt-add-btn { flex-shrink: 0; white-space: nowrap; padding: 8px 12px; }
+}
+
 /* Immersive "full canvas" mode — covers the app sidebar/header */
 .nt-root.nt-immersive {
   position: fixed; inset: 0; z-index: 9999; height: 100vh;
@@ -109,8 +123,12 @@
     radial-gradient(900px 480px at 50% 0%, rgba(166,106,43,0.05), transparent 60%);
 }
 .nt-graph-wrap.grabbing { cursor: grabbing; }
-.nt-graph { position: absolute; top: 0; inset-inline-start: 0; transform-origin: 0 0; will-change: transform; }
-.nt-graph-svg { position: absolute; top: 0; inset-inline-start: 0; overflow: visible; pointer-events: none; z-index: 1; }
+/* Physical left (not inset-inline-start): the pan/zoom matrix, transform-origin
+   0 0 and the cards' `left` coords are all measured from the LEFT edge. In RTL,
+   inset-inline-start resolves to right:0, which shoved the whole tree off-screen
+   whenever the graph is wider than the viewport. */
+.nt-graph { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
+.nt-graph-svg { position: absolute; top: 0; left: 0; overflow: visible; pointer-events: none; z-index: 1; }
 
 /* Generation rails behind the cards */
 .nt-rail {
