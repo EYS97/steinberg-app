@@ -58,6 +58,16 @@ export function formatHebrewYear(year: number): string {
   return gematriya(year);
 }
 
+/**
+ * Hebcal holiday titles embed the Hebrew year as digits ("ראש השנה 5787" —
+ * Rosh Hashanah is the only major holiday that carries one). Rewrite any
+ * standalone 5xxx year to proper gematriya notation (ה׳תשפ״ז) so titles match
+ * the app's Hebrew-date typography. Every other title passes through unchanged.
+ */
+export function normalizeHolidayTitle(title: string): string {
+  return title.replace(/(?<!\d)(5\d{3})(?!\d)/g, (_, y) => formatHebrewYear(Number(y)));
+}
+
 // ── Conversion ────────────────────────────────────────────────────────────
 export function convertGregorianToHebrew(date: Date): HebrewDateParts & { monthName: string } {
   const hd = new HDate(date);

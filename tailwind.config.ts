@@ -1,28 +1,33 @@
 import type { Config } from 'tailwindcss';
 
 export default {
-  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  // relative: resolve globs against this config file, not the process CWD
+  // (the dev server is launched with the app dir as a vite root arg, so CWD differs)
+  content: {
+    relative: true,
+    files: ['./index.html', './src/**/*.{ts,tsx}'],
+  },
   theme: {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#8B5E3C',
-          light: '#A8764D',
-          dark: '#6D472D',
+          DEFAULT: '#1F5E7A',
+          light: '#2E7795',
+          dark: '#174A61',
         },
         accent: {
-          DEFAULT: '#0EA5A4',
-          light: '#14C4C3',
-          dark: '#0B8786',
+          DEFAULT: '#A66A2B',
+          light: '#C28442',
+          dark: '#8A5520',
         },
-        background: '#F8F6F2',
+        background: '#FAF8F5',
         surface: '#FFFFFF',
-        'surface-alt': '#F2EEE8',
-        border: '#E0D8CE',
-        'text-base': '#1C1008',
-        'text-mid': '#5C3D28',
-        'text-muted': '#9B7B65',
-        success: '#22C55E',
+        'surface-alt': '#F3EFE8',
+        border: 'rgba(31, 94, 122, 0.12)',
+        'text-base': '#1F2933',
+        'text-mid': '#3E4C59',
+        'text-muted': '#5B6770',
+        success: '#2E7D32',
         warning: '#F59E0B',
         error: '#EF4444',
         info: '#3B82F6',

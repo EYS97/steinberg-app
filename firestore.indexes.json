@@ -1,0 +1,121 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "userActivity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "totalHomeVisits", "order": "DESCENDING" },
+        { "fieldPath": "lastHomeVisitAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "userActivity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "registrationDate", "order": "DESCENDING" },
+        { "fieldPath": "lastHomeVisitAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "userActivity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "nameLower", "order": "ASCENDING" },
+        { "fieldPath": "lastHomeVisitAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "userActivity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "lastHomeVisitAt", "order": "ASCENDING" },
+        { "fieldPath": "totalHomeVisits", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "userActivity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "lastHomeVisitAt", "order": "ASCENDING" },
+        { "fieldPath": "registrationDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "userActivity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "lastHomeVisitAt", "order": "ASCENDING" },
+        { "fieldPath": "nameLower", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "userActivity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "lastHomeVisitAt", "order": "DESCENDING" },
+        { "fieldPath": "registrationDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "userActivity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "totalHomeVisits", "order": "DESCENDING" },
+        { "fieldPath": "registrationDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "userActivity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "nameLower", "order": "ASCENDING" },
+        { "fieldPath": "registrationDate", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "userActivity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "totalHomeVisits", "order": "DESCENDING" },
+        { "fieldPath": "lastHomeVisitAt", "order": "DESCENDING" },
+        { "fieldPath": "registrationDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "userActivity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "nameLower", "order": "ASCENDING" },
+        { "fieldPath": "lastHomeVisitAt", "order": "ASCENDING" },
+        { "fieldPath": "registrationDate", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "userActivity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "lastHomeVisitAt", "order": "ASCENDING" },
+        { "fieldPath": "totalHomeVisits", "order": "DESCENDING" },
+        { "fieldPath": "registrationDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "userActivity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "lastHomeVisitAt", "order": "ASCENDING" },
+        { "fieldPath": "nameLower", "order": "ASCENDING" },
+        { "fieldPath": "registrationDate", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "userActivity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "lastHomeVisitAt", "order": "ASCENDING" },
+        { "fieldPath": "registrationDate", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

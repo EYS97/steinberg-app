@@ -7,6 +7,7 @@ import {
   getRecurringGregorianOccurrences,
   parseHebrewDateParts,
   formatGregorianDate,
+  normalizeHolidayTitle,
 } from '@/lib/dates';
 import type { AppEvent, EventType } from '@/types';
 
@@ -41,7 +42,7 @@ function loadHebcal(): Promise<HebcalData> {
         if (item.category === 'parashat') {
           parashot[item.date] = (item.hebrew || '').replace(/^פרשת\s+/, '');
         } else if (item.category === 'holiday' && !(item.hebrew || item.title || '').startsWith('ערב ')) {
-          holidays.push({ dateStr: item.date, title: item.hebrew || item.title });
+          holidays.push({ dateStr: item.date, title: normalizeHolidayTitle(item.hebrew || item.title) });
         }
       }
     } catch {

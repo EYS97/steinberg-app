@@ -1,0 +1,9 @@
+# Local state and secrets — do not commit.
+config.env
+sessions.json
+sessions.json.tmp.*
+watchdog.pid
+.lock/
+logs/
+# Keep the task ledger out of git too (it's a local working journal).
+task-ledger.md

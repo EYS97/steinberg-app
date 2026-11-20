@@ -2,6 +2,7 @@ import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { NAV_ITEMS } from '@/types';
 import { initials, avatarColor } from '@/lib/utils';
+import { findActiveNavItem } from '@/lib/navState';
 import { LogoIcon } from '@/components/ui/LogoIcon';
 import type { User } from 'firebase/auth';
 
@@ -12,10 +13,7 @@ interface HeaderProps {
 
 export function Header({ user, onUserClick }: HeaderProps) {
   const location = useLocation();
-  const page = NAV_ITEMS.find(n =>
-    n.path === location.pathname ||
-    (n.path !== '/' && location.pathname.startsWith(n.path))
-  );
+  const page = findActiveNavItem(NAV_ITEMS, location.pathname);
   const name = user?.displayName || user?.email || '';
 
   return (

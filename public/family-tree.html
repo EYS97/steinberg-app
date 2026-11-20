@@ -5282,7 +5282,7 @@ function generateSummaryText() {
   // All 4 rooms — booked or free
   const evBookings = _allBookings.filter(b => b.eventId === event.id);
   const ROOM_ORDER = ['penina','israel','yehuda','hayechida'];
-  const ROOM_LABELS = { penina:'חדר פנינה', israel:'חדר ישראל', yehuda:'חדר יהודה', hayechida:'היחידה' };
+  const ROOM_LABELS = { penina:'חדר פנינה', israel:'חדר יהודה', yehuda:'סלון', hayechida:'היחידה' };
   lines.push('');
   lines.push('🛏 *חדרים:*');
   ROOM_ORDER.forEach(rid => {
@@ -5680,8 +5680,8 @@ function calcCandlesForEvent(eventId) {
 // ── ROOMS ─────────────────────────────────────────────────
 const rooms = [
   { id:'penina',    name:'חדר פנינה', icon:'🛏', cap:'4 מיטות בודדות',    detail:'מתאים עד 4 אנשים',               booked: false, bookedBy:'', locked: false },
-  { id:'israel',   name:'חדר ישראל', icon:'🛏', cap:'זוג או 2 בודדים',   detail:'עם מיטה זוגית / שתי יחידות',   booked: false, bookedBy:'', locked: false },
-  { id:'yehuda',   name:'חדר יהודה', icon:'🛏', cap:'זוג + תינוק',        detail:'עריסה זמינה',                    booked: false, bookedBy:'', locked: false },
+  { id:'israel',   name:'חדר יהודה', icon:'🛏', cap:'זוג או 2 בודדים',   detail:'עם מיטה זוגית / שתי יחידות',   booked: false, bookedBy:'', locked: false },
+  { id:'yehuda',   name:'סלון', icon:'🛏', cap:'זוג + תינוק',        detail:'עריסה זמינה',                    booked: false, bookedBy:'', locked: false },
   { id:'hayechida',name:'היחידה',    icon:'🏠', cap:'זוג + תינוק',        detail:'כניסה עצמאית',                  booked: false, bookedBy:'', locked: false },
 ];
 

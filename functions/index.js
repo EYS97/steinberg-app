@@ -81,7 +81,7 @@ exports.wednesdayReport = onSchedule(
     const guests   = guestSnap.docs.map(d => d.data());
 
     const DEFAULT_DINERS = 4; // אבא, אמא, סבא, פנינה
-    const ROOM_NAMES = { penina:'חדר פנינה', israel:'חדר ישראל', yehuda:'חדר יהודה', hayechida:'היחידה' };
+    const ROOM_NAMES = { penina:'חדר פנינה', israel:'חדר יהודה', yehuda:'סלון', hayechida:'היחידה' };
 
     const lines = [];
     lines.push(`*דוח שבתי — משפחת שטיינברג* 🏡`);

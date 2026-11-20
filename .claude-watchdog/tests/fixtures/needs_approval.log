@@ -1,0 +1,4 @@
+Implemented the migration script and tests.
+The next step is a destructive production database migration.
+NEEDS_USER_APPROVAL: run `npm run migrate:prod` against the production database.
+Stopping and waiting for human approval.

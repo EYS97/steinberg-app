@@ -12,10 +12,13 @@ export default defineConfig({
   // Only scan root index.html for dependencies — don't touch public/ HTML files
   optimizeDeps: {
     entries: ['index.html'],
+    // @hebcal/noaa ships top-level await; default dev target (es2020) crashes the optimizer
+    esbuildOptions: { target: 'es2022' },
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    // Never ship source maps to production — they expose full original source.
+    sourcemap: false,
     // @hebcal/hdate ships a top-level-await Temporal polyfill loader (needs es2022+)
     target: 'es2022',
     rollupOptions: {

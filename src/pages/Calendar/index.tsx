@@ -9,6 +9,8 @@ import { Modal } from '@/components/ui/Modal';
 import { Input, Select, TextArea } from '@/components/ui/Input';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useEvents } from '@/hooks/useEvents';
+import { useNow } from '@/hooks/useNow';
+import { isActiveOrUpcoming, hasHalachicallyEnded } from '@/lib/jewishEvents';
 import { useBirthdays } from '@/hooks/useBirthdays';
 import { useMemorials } from '@/hooks/useMemorials';
 import { useAllBookings } from '@/hooks/useBookings';
@@ -90,6 +92,7 @@ export function Calendar({ user, isAdmin }: CalendarProps) {
   const { data: memorials } = useMemorials();
   const [calMode, setCalMode] = useCalendarMode();
 
+  const now = useNow();
   const today = new Date();
   const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [view, setView] = useState<ViewMode>('month');
@@ -187,25 +190,25 @@ export function Calendar({ user, isAdmin }: CalendarProps) {
     return map;
   }, [events, birthdays, memorials, cells]);
 
-  // Agenda: all events sorted
+  // Agenda: events that are active or still upcoming (by halachic end time)
   const agendaItems = useMemo(() => {
     return events
-      .filter(e => e.date?.toDate?.() >= today)
+      .filter(e => isActiveOrUpcoming(e, now))
       .map(e => ({ ...e, _date: e.date!.toDate() }))
       .sort((a, b) => a._date.getTime() - b._date.getTime())
       .slice(0, 30);
-  }, [events]);
+  }, [events, now]);
 
-  // History: past events that had room bookings, newest first
+  // History: past events (concluded by halachic time) that had room bookings
   const historyItems = useMemo(() => {
-    const t = new Date(); t.setHours(0, 0, 0, 0);
     return events
+      .filter(e => hasHalachicallyEnded(e, now))
       .map(e => ({ ...e, _date: e.date?.toDate?.() }))
-      .filter((e): e is typeof e & { _date: Date } => !!e._date && e._date < t)
+      .filter((e): e is typeof e & { _date: Date } => !!e._date)
       .map(e => ({ ...e, _bookings: bookings.filter(b => b.eventId === e.id) }))
       .filter(e => e._bookings.length > 0)
       .sort((a, b) => b._date.getTime() - a._date.getTime());
-  }, [events, bookings]);
+  }, [events, bookings, now]);
 
   function navigateMonth(delta: 1 | -1) {
     if (hebrewView) {

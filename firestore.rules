@@ -1,11 +1,182 @@
 // firestore.rules
-// כל משתמש מחובר יכול לקרוא ולכתוב — אפליקציה פרטית למשפחה
+// אפליקציה פרטית למשפחה — ההרשאות נאכפות כאן, לא רק בצד הלקוח.
+//
+// עקרונות (least privilege):
+//  • קריאה/כתיבה של נתוני המשפחה מותרת רק למשתמש *מאושר* (settings/approvedUsers),
+//    לא לכל מי שמחובר. משתמש "ממתין לאישור" לא יכול לקרוא או לשנות שום נתון.
+//  • סודות (מפתחות API, טלפונים) ב-settings/config — מנהלים בלבד.
+//  • הרשאות מנהל (settings/admins) — נכתבות רק על-ידי מנהל קיים, עם bootstrap
+//    חד-פעמי כשעוד אין אף מנהל. כך אי אפשר יותר "לתבוע" מנהל בכוח.
+//  • אירוע סגור (settings/closedEvents) חוסם יצירת הזמנות/סעודות/בקשות אירוח.
+//
+// GOTCHA (rules v2): גם {rest=**} וגם match כללי תופסים אפס מקטעים, ולכן הם
+// מצטרפים ב-OR למה שהקאצ'-אול מאפשר. לכן 'settings' ו-'userActivity' חייבים
+// להיות מוחרגים מכל match כללי, ומטופלים ב-match ייעודי בלבד.
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function adminsDocExists() {
+      return exists(/databases/$(database)/documents/settings/admins);
+    }
+
+    function isAppAdmin() {
+      return signedIn()
+        && adminsDocExists()
+        && request.auth.uid in get(/databases/$(database)/documents/settings/admins).data.uids;
+    }
+
+    function approvedExists() {
+      return exists(/databases/$(database)/documents/settings/approvedUsers);
+    }
+
+    function approvedData() {
+      return get(/databases/$(database)/documents/settings/approvedUsers).data;
+    }
+
+    // משתמש מאושר = מנהל, או נמצא ברשימת ה-uids/emails, או (bootstrap) אין עדיין
+    // מסמך approvedUsers כלל. ברגע שהמסמך קיים — האכיפה מלאה.
+    function isApproved() {
+      return signedIn() && (
+        !approvedExists()
+        || isAppAdmin()
+        || request.auth.uid in approvedData().get('uids', [])
+        || (request.auth.token.email != null
+            && request.auth.token.email in approvedData().get('emails', []))
+      );
+    }
+
+    function eventClosed(eventId) {
+      return exists(/databases/$(database)/documents/settings/closedEvents)
+        && 'ids' in get(/databases/$(database)/documents/settings/closedEvents).data
+        && eventId in get(/databases/$(database)/documents/settings/closedEvents).data.ids;
+    }
+
+    // לינה וסעודות הן רישום אחד — אירוע סגור חוסם את שניהם (מנהל פטור)
+    function registrationAllowed() {
+      return isAppAdmin() || !eventClosed(request.resource.data.eventId);
+    }
+
+    // ── Settings — מסמך-לפי-מסמך (לא דרך הקאצ'-אול) ──────────────────
+    match /settings/{docId} {
+      allow read: if
+        docId == 'config'        ? isAppAdmin()                 // סודות: מנהלים בלבד
+        : docId == 'pendingUsers' ? isAppAdmin()                // רשימת הממתינים — מנהלים בלבד
+        : docId == 'approvedUsers' ? signedIn()                 // נחוץ לשער האישור בצד הלקוח
+        : isApproved();                                         // admins/closedEvents/locks ...
+
+      allow write: if
+        docId == 'config'        ? isAppAdmin()
+        : docId == 'pendingUsers' ? signedIn()                  // הרשמה עצמית לתור ההמתנה
+        : (docId == 'admins' || docId == 'approvedUsers')
+            ? (isAppAdmin() || !adminsDocExists())              // bootstrap למנהל הראשון בלבד
+        : isAppAdmin();                                         // closedEvents/locks ...
+    }
+
+    // ── אנליטיקת שימוש — מנהל רואה את כולם; משתמש רק את עצמו ──────────
+    match /userActivity/{uid} {
+      allow read, write: if signedIn()
+        && (request.auth.uid == uid || isAppAdmin());
+    }
+
+    // ── הזמנות / סעודות / בקשות אירוח — נחסמות באירוע סגור ──────────
+    // ביטול/עריכת הזמנה — רק מי שיצר אותה (createdBy == uid) או מנהל.
+    // הזמנות ישנות ללא createdBy ניתנות לביטול על-ידי מנהל בלבד.
+    function ownsBooking() {
+      return isAppAdmin()
+        || resource.data.get('createdBy', '') == request.auth.uid;
+    }
+
+    match /bookings/{id} {
+      allow read: if isApproved();
+      allow update, delete: if isApproved() && ownsBooking();
+      allow create: if isApproved()
+        && request.resource.data.eventId is string
+        && registrationAllowed();
+    }
+
+    // מגבלת משפחות מתארחות: שדות מוגנים ברישום לסעודה.
+    //  • רק מנהל רשאי לחתום approvalSource == 'adminApproved' או לדחות בקשה.
+    //  • status חייב להיות ערך חוקי כשהוא קיים.
+    // (קידום אוטומטי 'automaticWithinLimit' נכתב מכל לקוח מאושר — מודל האמון
+    //  של אפליקציה משפחתית; הכפתורים מוסתרים ב-UI.)
+    function validRegStatus() {
+      return !('status' in request.resource.data)
+        || request.resource.data.status in
+             ['approved', 'pendingAdminApproval', 'rejected', 'cancelled'];
+    }
+
+    function regWriteAllowedForNonAdmin() {
+      return validRegStatus()
+        && request.resource.data.get('approvalSource', '') != 'adminApproved'
+        && request.resource.data.get('status', '') != 'rejected';
+    }
+
+    match /seudahRegistrations/{id} {
+      allow read: if isApproved();
+      allow delete: if isApproved();
+      allow update: if isApproved()
+        && (isAppAdmin() || regWriteAllowedForNonAdmin());
+      allow create: if isApproved()
+        && request.resource.data.eventId is string
+        && registrationAllowed()
+        && (isAppAdmin() || regWriteAllowedForNonAdmin());
+    }
+
+    // ── הגדרות מגבלת משפחות לאירוע — קריאה למאושרים, כתיבה למנהל/מארח ──
+    // מארח = הורה במשפחה המארחת שהוגדרה על האירוע (זיהוי לפי אימייל המשפחה).
+    // מארח אינו רשאי להחליף את משפחת המארח עצמה — רק מנהל.
+    function isConfigHost() {
+      return isApproved()
+        && resource != null
+        && resource.data.get('hostFamilyId', '') != ''
+        && request.auth.token.email != null
+        && get(/databases/$(database)/documents/families/$(resource.data.hostFamilyId))
+             .data.get('email', '') == request.auth.token.email
+        && request.resource.data.get('hostFamilyId', '')
+             == resource.data.get('hostFamilyId', '');
+    }
+
+    match /eventMealConfig/{eventId} {
+      allow read: if isApproved();
+      allow create, delete: if isAppAdmin();
+      allow update: if isAppAdmin() || isConfigHost();
+    }
+
+    // ── יומן ביקורת למנגנון המגבלה — כתיבה בלבד, קריאה למנהלים ──────────
+    match /mealLimitAudit/{id} {
+      allow read: if isAppAdmin();
+      allow create: if isApproved();
+      allow update, delete: if false;
+    }
+
+    match /hostingRequests/{id} {
+      allow read: if isApproved();
+      allow update, delete: if isApproved();
+      // eventId אופציונלי על בקשת אירוח; כשהוא קיים האירוע חייב להיות פתוח
+      allow create: if isApproved()
+        && (!('eventId' in request.resource.data) || registrationAllowed());
+    }
+
+    // ── כל שאר נתוני המשפחה — מאושרים בלבד (לא כל מי שמחובר) ─────────
+    // settings + userActivity מוחרגים כי יש להם match ייעודי משלהם.
+    // seudahRegistrations / eventMealConfig / mealLimitAudit מוחרגים גם הם —
+    // אחרת הקאצ'-אול היה עוקף (OR) את המגבלות הייעודיות שלהם למעלה.
+    match /{collection}/{id} {
+      allow read, write: if isApproved()
+        && !(collection in ['settings', 'userActivity',
+                            'seudahRegistrations', 'eventMealConfig', 'mealLimitAudit']);
+    }
+
+    match /{collection}/{id}/{rest=**} {
+      allow read, write: if isApproved()
+        && !(collection in ['settings', 'userActivity',
+                            'seudahRegistrations', 'eventMealConfig', 'mealLimitAudit']);
     }
   }
 }

@@ -10,6 +10,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/firebase/config';
+import { assertEventOpen } from './useBookings';
 import type { HostingAvailability, HostingRequest, RequestStatus } from '@/types';
 
 export function useHosting() {
@@ -54,8 +55,11 @@ export async function cancelHostingAvailability(id: string): Promise<void> {
 }
 
 export async function createHostingRequest(
-  data: Omit<HostingRequest, 'id' | 'createdAt' | 'status'>
+  data: Omit<HostingRequest, 'id' | 'createdAt' | 'status'>,
+  isAdmin = false
 ): Promise<void> {
+  // A hosting request registers both sleeping and meals — blocked when the event is closed
+  if (data.eventId) await assertEventOpen(data.eventId, isAdmin);
   await addDoc(collection(db, 'hostingRequests'), {
     ...data,
     status: 'pending',

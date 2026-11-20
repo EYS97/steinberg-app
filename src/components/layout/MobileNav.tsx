@@ -3,13 +3,14 @@ import { NavLink } from 'react-router-dom';
 import { MOBILE_NAV_ITEMS } from '@/types';
 import { cn } from '@/lib/utils';
 
-export function MobileNav() {
+export function MobileNav({ isAdmin = false }: { isAdmin?: boolean }) {
+  const items = MOBILE_NAV_ITEMS.filter(n => !n.adminOnly || isAdmin);
   return (
     <nav
       className="mobile-nav px-2 pb-safe"
       aria-label="ניווט תחתון"
     >
-      {MOBILE_NAV_ITEMS.map(item => (
+      {items.map(item => (
         <NavLink
           key={item.id}
           to={item.path}

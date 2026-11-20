@@ -9,7 +9,7 @@ import {
   signOut as firebaseSignOut,
   type User,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, increment, Timestamp } from 'firebase/firestore';
 import { auth, db } from '@/firebase/config';
 
 interface AuthState {
@@ -67,14 +67,25 @@ export function useAuth(): AuthState {
         setIsPending(!approved);
         if (!approved) await registerPending(firebaseUser);
         else {
-          // Log activity
+          // Log activity + keep the analytics base fields normalized
+          // (increment(0) creates totalHomeVisits as 0 without clobbering it)
           try {
-            await setDoc(doc(db, 'userActivity', firebaseUser.uid), {
+            const creation = firebaseUser.metadata.creationTime
+              ? Timestamp.fromDate(new Date(firebaseUser.metadata.creationTime))
+              : null;
+            const entry: Record<string, unknown> = {
               uid: firebaseUser.uid,
               email: firebaseUser.email,
-              name: firebaseUser.displayName,
+              emailLower: firebaseUser.email?.toLowerCase() ?? null,
+              nameLower: (firebaseUser.displayName || firebaseUser.email || firebaseUser.uid).toLowerCase(),
+              phone: firebaseUser.phoneNumber ?? null,
+              phoneDigits: firebaseUser.phoneNumber?.replace(/\D/g, '') ?? null,
+              registrationDate: creation,
+              totalHomeVisits: increment(0),
               lastSeen: serverTimestamp(),
-            }, { merge: true });
+            };
+            if (firebaseUser.displayName) entry.name = firebaseUser.displayName;
+            await setDoc(doc(db, 'userActivity', firebaseUser.uid), entry, { merge: true });
           } catch { /* silent */ }
         }
       } else {

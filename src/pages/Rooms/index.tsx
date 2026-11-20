@@ -8,16 +8,17 @@ import { Modal } from '@/components/ui/Modal';
 import { Select, Input, TextArea } from '@/components/ui/Input';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
-import { useEvents } from '@/hooks/useEvents';
+import { useActiveEvent } from '@/hooks/useActiveEvent';
+import { resolveDefaultEventId, upcomingEventsFrom, computeRoomStats } from '@/lib/eventState';
 import {
-  useBookingsForEvent, useAllBookings, addBooking, cancelBooking,
+  useBookingsForEvent, addBooking, cancelBooking,
   useLocks, useClosedEvents
 } from '@/hooks/useBookings';
 import { useFamilies } from '@/hooks/useFamilies';
 import { useToast } from '@/components/ui/Toast';
 import { useCalendarMode } from '@/hooks/useCalendarMode';
 import { formatDateByMode } from '@/lib/dates';
-import { ROOMS, SHABBAT_SEUDOT, HOLIDAY_SEUDOT, permanentOccupants, availableBeds } from '@/types';
+import { ROOMS, SHABBAT_SEUDOT, HOLIDAY_SEUDOT } from '@/types';
 import { setDoc, doc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import type { User } from 'firebase/auth';
@@ -29,21 +30,24 @@ interface RoomsProps {
 
 export function Rooms({ user, isAdmin }: RoomsProps) {
   const { showToast } = useToast();
-  const { data: events, loading: evLoading } = useEvents();
+  const { events, now, loading: evLoading } = useActiveEvent();
   const { data: families } = useFamilies();
   const locks = useLocks();
   const closedEventIds = useClosedEvents();
   const [calMode] = useCalendarMode();
 
-  const upcomingEvents = events.filter(e => e.date?.toDate?.() >= new Date());
+  // Default to the same active Shabbat/holiday the homepage focuses, so the two
+  // pages always show the same event. The dropdown still lists every upcoming
+  // event (any type) since a room can be booked for any of them.
+  const upcomingEvents = upcomingEventsFrom(events, now);
   const [selectedEventId, setSelectedEventId] = useState('');
-  const eventId = selectedEventId || upcomingEvents[0]?.id || '';
+  const eventId = selectedEventId || resolveDefaultEventId(events, now) || upcomingEvents[0]?.id || '';
   const event = events.find(e => e.id === eventId);
   const isClosed = closedEventIds.includes(eventId);
   const seudahOptions = event?.type === 'holiday' ? HOLIDAY_SEUDOT : SHABBAT_SEUDOT;
 
   const { bookings, loading: bkLoading } = useBookingsForEvent(eventId);
-  const { bookings: allBookings } = useAllBookings();
+  const roomStats = computeRoomStats(bookings, locks, isClosed);
 
   const [bookModal, setBookModal] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState('');
@@ -65,7 +69,7 @@ export function Rooms({ user, isAdmin }: RoomsProps) {
   }));
 
   function openBook(roomId: string) {
-    if ((isClosed && !isAdmin) || locks[roomId]) return;
+    if (isClosed || locks[roomId]) return;
     setSelectedRoomId(roomId);
     setForm({ familyId: '', familyName: '', adults: 2, kids: 0, notes: '', mealParticipation: [], isExternal: false, externalName: '' });
     setBookModal(true);
@@ -77,13 +81,6 @@ export function Rooms({ user, isAdmin }: RoomsProps) {
     if (!fname) { showToast('נא לבחור משפחה', 'error'); return; }
     if (bookings.find(b => b.roomId === selectedRoomId)) {
       showToast('החדר כבר מוזמן לאירוע זה', 'error'); return;
-    }
-    // Beds taken by permanent residents are not available for guests
-    const room = ROOMS.find(r => r.id === selectedRoomId);
-    if (room && form.adults > availableBeds(room)) {
-      const occ = permanentOccupants(room.id).map(o => o.name).join(', ');
-      showToast(`בחדר זה גר/ה ${occ} באופן קבוע — נותרו ${availableBeds(room)} מיטות לאורחים`, 'error');
-      return;
     }
     setSubmitting(true);
     try {
@@ -98,7 +95,8 @@ export function Rooms({ user, isAdmin }: RoomsProps) {
         notes: form.notes,
         mealParticipation: form.mealParticipation,
         isExternalGuest: form.isExternal,
-      });
+        createdBy: user?.uid,
+      }, isAdmin);
       showToast('ההזמנה נרשמה ✓');
       setBookModal(false);
     } catch (e: unknown) {
@@ -143,8 +141,6 @@ export function Rooms({ user, isAdmin }: RoomsProps) {
   }));
 
   const selectedRoom = ROOMS.find(r => r.id === selectedRoomId);
-  const selectedRoomOccupants = selectedRoom ? permanentOccupants(selectedRoom.id) : [];
-  const selectedRoomBeds = selectedRoom ? availableBeds(selectedRoom) : 0;
 
   const toggleMeal = (meal: string) => {
     setForm(f => ({
@@ -184,7 +180,7 @@ export function Rooms({ user, isAdmin }: RoomsProps) {
         {isClosed && (
           <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700 flex items-center gap-2">
             <Lock size={14} />
-            ההזמנות לאירוע זה סגורות{isAdmin ? ' — ניתן לפתוח דרך כפתור ניהול' : ''}
+            ההרשמה סגורה — ההרשמה לשינה ולסעודות סגורה לאירוע זה{isAdmin ? ' (ניתן לפתוח דרך כפתור הניהול)' : ''}
           </div>
         )}
       </Card>
@@ -203,11 +199,10 @@ export function Rooms({ user, isAdmin }: RoomsProps) {
           animate="visible"
           variants={{ visible: { transition: { staggerChildren: 0.07 } } }}
         >
-          {ROOMS.map(room => {
-            const booking = bookings.find(b => b.roomId === room.id);
+          {roomStats.perRoom.map(({ room, bookings: roomBookings, locked: isLocked }) => {
+            const booking = roomBookings[0];
             const isBooked = !!booking;
-            const isLocked = locks[room.id];
-            const isClickable = !isLocked && (!isClosed || isAdmin);
+            const isClickable = !isLocked && !isClosed;
 
             return (
               <motion.div
@@ -244,12 +239,6 @@ export function Rooms({ user, isAdmin }: RoomsProps) {
                   {room.hasCrib && (
                     <p className="text-xs text-amber-600 mt-0.5">🍼 עריסה זמינה</p>
                   )}
-                  {permanentOccupants(room.id).length > 0 && (
-                    <p className="text-xs text-primary mt-0.5">
-                      🏠 דייר/ת קבוע/ה: {permanentOccupants(room.id).map(o => o.name).join(', ')} · נותרו {availableBeds(room)} מיטות לאורחים
-                    </p>
-                  )}
-
                   <div className="mt-3">
                     {isLocked ? (
                       <Badge variant="warning"><Lock size={10} /> נעול</Badge>
@@ -259,7 +248,7 @@ export function Rooms({ user, isAdmin }: RoomsProps) {
                           ✓ {booking.familyName}
                           {booking.isExternalGuest ? ' 👤' : ''}
                         </Badge>
-                        {booking.mealParticipation?.length > 0 && (
+                        {Array.isArray(booking.mealParticipation) && booking.mealParticipation.length > 0 && (
                           <p className="text-xs text-text-muted">
                             🍽 {booking.mealParticipation.join(' · ')}
                           </p>
@@ -274,14 +263,16 @@ export function Rooms({ user, isAdmin }: RoomsProps) {
 
                   {isBooked && (
                     <div className="mt-3 pt-3 border-t border-border flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={e => { e.stopPropagation(); handleCancel(booking.id); }}
-                        className="text-error border-error/40 hover:bg-red-50"
-                      >
-                        <X size={12} /> בטל הזמנה
-                      </Button>
+                      {(isAdmin || (!!user && booking.createdBy === user.uid)) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={e => { e.stopPropagation(); handleCancel(booking.id); }}
+                          className="text-error border-error/40 hover:bg-red-50"
+                        >
+                          <X size={12} /> בטל הזמנה
+                        </Button>
+                      )}
                       <div className="flex items-center gap-1 text-xs text-text-muted">
                         <Users size={12} />
                         {booking.adults} מבוגרים
@@ -343,12 +334,6 @@ export function Rooms({ user, isAdmin }: RoomsProps) {
         }
       >
         <div className="space-y-4">
-          {selectedRoomOccupants.length > 0 && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-text-mid">
-              🏠 בחדר זה גר/ה באופן קבוע: <strong>{selectedRoomOccupants.map(o => o.name).join(', ')}</strong>
-              <span className="text-text-muted"> · {selectedRoomBeds} מיטות פנויות לאורחים</span>
-            </div>
-          )}
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -388,7 +373,7 @@ export function Rooms({ user, isAdmin }: RoomsProps) {
               label="מבוגרים"
               type="number"
               min={1}
-              max={selectedRoomBeds || 6}
+              max={selectedRoom?.maxAdults || 6}
               value={form.adults}
               onChange={e => setForm(f => ({ ...f, adults: Number(e.target.value) }))}
             />
