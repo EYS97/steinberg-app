@@ -39,9 +39,14 @@ import { Rooms }        from '@/pages/Rooms';
 import { Seudot }       from '@/pages/Seudot';
 import { Hosting }      from '@/pages/Hosting';
 import { FamilyPage }   from '@/pages/Family';
-import { FamilyTree }   from '@/pages/FamilyTree';
+import { FamilyTreeSwitch } from '@/pages/FamilyTree/FamilyTreeSwitch';
 import { Notifications } from '@/pages/Notifications';
 import { Settings }     from '@/pages/Settings';
+import { Admin }        from '@/pages/Admin';
+import { AdminActivity } from '@/pages/Admin/Activity';
+import { AdminRequests } from '@/pages/Admin/Requests';
+import { Report }       from '@/pages/Report';
+import { August }       from '@/pages/August';
 
 function AppRoutes() {
   const { user, loading, isApproved, isPending } = useAuth();
@@ -63,9 +68,15 @@ function AppRoutes() {
         <Route path="/meals"        element={<Navigate to="/seudot" replace />} />
         <Route path="/hosting"      element={<Hosting {...props} />} />
         <Route path="/family"       element={<FamilyPage {...props} />} />
-        <Route path="/family-tree"  element={<FamilyTree />} />
+        <Route path="/august"       element={<August {...props} />} />
+        <Route path="/family-tree"  element={<FamilyTreeSwitch {...props} />} />
         <Route path="/notifications" element={<Notifications {...props} />} />
         <Route path="/settings"     element={<Settings {...props} />} />
+        <Route path="/admin"        element={<Admin {...props} />} />
+        <Route path="/admin/requests" element={<AdminRequests {...props} />} />
+        <Route path="/admin/activity" element={<AdminActivity {...props} />} />
+        <Route path="/report"        element={<Report isAdmin={isAdmin} />} />
+        <Route path="/report/:eventId" element={<Report isAdmin={isAdmin} />} />
         <Route path="*"             element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

@@ -13,6 +13,7 @@ import { formatDayLong } from '@/lib/august/plan';
 import {
   orderedMembers, transportationForDay, dayBadge, DAY_BADGE_LABEL,
 } from '@/lib/august/dayView';
+import { isFamilyHoliday } from '@/lib/august/holiday';
 import type { AugustIssue } from '@/lib/august/issues';
 import type { AugustMember, AugustTimelineItem, AugustTask, AugustItemType } from '@/types/august';
 
@@ -30,6 +31,8 @@ interface DayViewProps {
   onSaveNote: (note: string) => void;
   onSaveTasks: (tasks: AugustTask[]) => void;
   onAddItem: (draft: ItemDraft) => Promise<void>;
+  /** Atomic fan-out for family holidays (one batch, all members). */
+  onAddItems?: (drafts: ItemDraft[]) => Promise<void>;
   onUpdateItem: (id: string, draft: ItemDraft) => Promise<void>;
   onDeleteItem: (id: string) => Promise<void>;
 }
@@ -45,7 +48,7 @@ const QUICK_ADD: { label: string; type: AugustItemType }[] = [
 
 export function DayView({
   open, onClose, date, members, items, issues, coverageStart, coverageEnd,
-  note, tasks, onSaveNote, onSaveTasks, onAddItem, onUpdateItem, onDeleteItem,
+  note, tasks, onSaveNote, onSaveTasks, onAddItem, onAddItems, onUpdateItem, onDeleteItem,
 }: DayViewProps) {
   const ordered = useMemo(() => orderedMembers(members), [members]);
   const [formOpen, setFormOpen] = useState(false);
@@ -76,6 +79,8 @@ export function DayView({
   const cost = items.reduce((s, it) => s + (typeof it.cost === 'number' ? it.cost : 0), 0);
   const criticalCount = items.filter(it => it.isCritical).length;
   const childGap = (id: string) => issues.some(i => i.kind === 'coverage_gap' && i.personId === id);
+  // Logistics (info) never fails the day — it's optional, tracked separately.
+  const realIssues = issues.filter(i => i.severity !== 'info');
 
   function openAdd(personId?: string, type?: AugustItemType) {
     setEditing(null); setDefaultPerson(personId); setDefaultType(type); setFormOpen(true);
@@ -98,7 +103,7 @@ export function DayView({
     member: m,
     ok: m.role === 'child' ? !childGap(m.id) : true,
   }));
-  const allOk = issues.length === 0;
+  const allOk = realIssues.length === 0;
 
   return (
     <>
@@ -106,23 +111,23 @@ export function DayView({
         <div className="space-y-4">
           {/* Header: status + summary chips */}
           <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant={badge === 'covered' ? 'success' : badge === 'attention' ? 'warning' : badge === 'empty' ? 'default' : 'error'}>
+            <Badge variant={badge === 'covered' ? 'success' : badge === 'attention' || badge === 'conflict' ? 'warning' : badge === 'empty' ? 'default' : 'error'}>
               {DAY_BADGE_LABEL[badge]}
             </Badge>
             <span className="text-xs text-text-muted">{items.length} פעילויות</span>
-            <span className="text-xs text-text-muted">· {issues.length} בעיות</span>
+            <span className="text-xs text-text-muted">· {realIssues.length} בעיות</span>
             <span className="text-xs text-text-muted">· ₪{cost.toLocaleString('he-IL')}</span>
             {criticalCount > 0 && <span className="text-xs text-text-muted">· ⭐ {criticalCount} חשוב</span>}
           </div>
 
           {/* Open issues */}
-          {issues.length > 0 && (
+          {realIssues.length > 0 && (
             <div className="rounded-card border border-warning/40 bg-amber-50/60 p-3">
               <h4 className="font-bold text-warning flex items-center gap-1.5 mb-2">
                 <AlertTriangle size={16} /> דורש סגירה
               </h4>
               <ul className="space-y-1">
-                {issues.map(i => (
+                {realIssues.map(i => (
                   <li key={i.id} className="text-sm text-text-mid flex items-start gap-1.5">
                     <span aria-hidden="true">{i.severity === 'red' ? '🔴' : '🟡'}</span>{i.message}
                   </li>
@@ -216,6 +221,7 @@ export function DayView({
         defaultPersonId={defaultPerson}
         defaultType={defaultType}
         onSubmit={submit}
+        onSubmitMany={onAddItems}
       />
 
       <ConfirmDialog
@@ -223,7 +229,11 @@ export function DayView({
         onClose={() => setDeleteTarget(null)}
         onConfirm={async () => { if (deleteTarget) await onDeleteItem(deleteTarget.id); setDeleteTarget(null); }}
         title="מחיקת פריט"
-        message={`למחוק את "${deleteTarget?.title}"?`}
+        message={
+          deleteTarget && isFamilyHoliday(deleteTarget)
+            ? `החופשה המשפחתית "${deleteTarget.title}" תימחק לכל בני המשפחה. למחוק?`
+            : `למחוק את "${deleteTarget?.title}"?`
+        }
         confirmLabel="מחק"
       />
     </>

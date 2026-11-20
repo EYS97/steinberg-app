@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Key, Shield, Users, Send, Eye, EyeOff } from 'lucide-react';
+import { Key, Send, Eye, EyeOff } from 'lucide-react';
 import { AppLogo } from '@/components/ui/AppLogo';
 import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/config';
@@ -7,60 +7,56 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
-import { claimAdmin, approveUser } from '@/hooks/useAdmin';
 import { useFamilies } from '@/hooks/useFamilies';
+import { useEvents } from '@/hooks/useEvents';
+import { getActiveOrNextJewishEvent, isActiveOrUpcoming } from '@/lib/jewishEvents';
 import { openWhatsApp } from '@/lib/utils';
 import { formatGregorianDate, formatHebrewDate } from '@/lib/dates';
-import { ALL_SEUDOT, AUTO_ATTENDEES, AUTO_ATTENDEES_COUNT } from '@/types';
-import type { Seudah, SeudahRegistration } from '@/types';
+import { seudotForEvent, AUTO_ATTENDEES, AUTO_ATTENDEES_COUNT } from '@/types';
+import type { AppEvent, Seudah, SeudahRegistration } from '@/types';
 import type { User } from 'firebase/auth';
-
-const MOM_PHONE = '972545300361';
 
 interface SettingsProps { user: User | null; isAdmin: boolean; }
 
 export function Settings({ user, isAdmin }: SettingsProps) {
   const { showToast } = useToast();
   const { data: families } = useFamilies();
+  const { data: events } = useEvents();
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
-  const [pendingUsers, setPendingUsers] = useState<{ uid: string; email: string; name: string }[]>([]);
+  // The weekly roster report is sent to a single recipient (e.g. mom's WhatsApp).
+  // The number lives in admin-only settings/config so it never ships in the
+  // public client bundle. Editable below by admins.
+  const [reportPhone, setReportPhone] = useState('');
   const [loadingReport, setLoadingReport] = useState(false);
 
   useEffect(() => {
+    // settings/config is admin-only at the rules layer (it holds secrets).
     if (!isAdmin) return;
     getDoc(doc(db, 'settings', 'config')).then(snap => {
-      if (snap.exists()) setApiKey(snap.data().anthropicApiKey || '');
-    });
-    getDoc(doc(db, 'settings', 'pendingUsers')).then(snap => {
-      if (snap.exists()) setPendingUsers(snap.data().list || []);
+      if (snap.exists()) {
+        setApiKey(snap.data().anthropicApiKey || '');
+        setReportPhone(snap.data().reportPhone || '');
+      }
     });
   }, [isAdmin]);
 
   async function saveApiKey() {
     try {
-      await setDoc(doc(db, 'settings', 'config'), { anthropicApiKey: apiKey }, { merge: true });
-      showToast('מפתח ה-API נשמר ✓');
-    } catch (e: unknown) { showToast((e as Error).message, 'error'); }
-  }
-
-  async function handleClaimAdmin() {
-    if (!user) return;
-    try {
-      await claimAdmin(user.uid);
-      showToast('הפכת למנהל ✓');
-    } catch (e: unknown) { showToast((e as Error).message, 'error'); }
-  }
-
-  async function handleApprove(uid: string, email: string) {
-    try {
-      await approveUser(uid, email);
-      setPendingUsers(prev => prev.filter(u => u.uid !== uid));
-      showToast('המשתמש אושר ✓');
-    } catch (e: unknown) { showToast((e as Error).message, 'error'); }
+      await setDoc(
+        doc(db, 'settings', 'config'),
+        { anthropicApiKey: apiKey, reportPhone },
+        { merge: true }
+      );
+      showToast('ההגדרות נשמרו ✓');
+    } catch { showToast('שמירת ההגדרות נכשלה', 'error'); }
   }
 
   async function generateWhatsAppReport() {
+    if (!reportPhone) {
+      showToast('יש להגדיר מספר יעד לדו"ח בהגדרות המנהל', 'error');
+      return;
+    }
     setLoadingReport(true);
     try {
       // Gather all data for the report
@@ -70,9 +66,13 @@ export function Settings({ user, isAdmin }: SettingsProps) {
       const regSnap = await getDocs(collection(db, 'seudahRegistrations'));
 
       const now = new Date();
+      // Active-or-next Shabbat/holiday by halachic time (Jerusalem) — the same
+      // resolver the home screen uses, so the report never reports an event
+      // that has already ended.
+      const nextEvent = getActiveOrNextJewishEvent(events, now)?.event;
       const upcoming = evSnap.docs
-        .map(d => d.data())
-        .filter(e => e.date?.toDate?.() >= now)
+        .map(d => ({ id: d.id, ...d.data() } as AppEvent))
+        .filter(e => isActiveOrUpcoming(e, now))
         .slice(0, 3);
 
       let msg = '📋 *דו"ח שבועי — משפחת שטיינברג*\n\n';
@@ -88,7 +88,7 @@ export function Settings({ user, isAdmin }: SettingsProps) {
 
       const bookings = bkSnap.docs.map(d => d.data());
       if (bookings.length > 0) {
-        const nextEvId = upcoming[0]?.id || '';
+        const nextEvId = nextEvent?.id || upcoming[0]?.id || '';
         const nextBookings = nextEvId ? bookings.filter(b => b.eventId === nextEvId) : bookings.slice(0, 4);
         if (nextBookings.length > 0) {
           msg += '🛏 *חדרים מוזמנים:*\n';
@@ -99,29 +99,15 @@ export function Settings({ user, isAdmin }: SettingsProps) {
         }
       }
 
-      // Seudot — Shabbat/holiday events are client-generated (not in Firestore),
-      // so resolve each seudah's event date from its eventId (shabbat-YYYY-MM-DD)
-      // or, for manual events, from the events collection.
-      const seudahEventDate = (eventId: string): Date | null => {
-        const m = eventId?.match(/(\d{4}-\d{2}-\d{2})$/);
-        if (m) return new Date(`${m[1]}T23:59:59`);
-        const ev = evSnap.docs.find(d => d.id === eventId)?.data();
-        return ev?.date?.toDate?.() ?? null;
-      };
+      // Seudot — every Shabbat/holiday has its seudot by default (synthesized
+      // client-side from the generated events), with families joining them. Pull
+      // the nearest upcoming Shabbat/holiday and merge any stored seudot docs.
+      const fsSeudot = seudotSnap.docs.map(d => ({ id: d.id, ...d.data() } as Seudah));
       const regs = regSnap.docs.map(d => ({ id: d.id, ...d.data() } as SeudahRegistration));
-      const upcomingSeudot = seudotSnap.docs
-        .map(d => ({ id: d.id, ...d.data() } as Seudah))
-        .map(s => ({ ...s, eventDate: seudahEventDate(s.eventId) }))
-        .filter(s => s.eventDate && s.eventDate >= now)
-        .sort((a, b) => (a.eventDate as Date).getTime() - (b.eventDate as Date).getTime());
 
-      if (upcomingSeudot.length > 0) {
-        // Report the nearest Shabbat/holiday that has seudot
-        const nextSeudotEventId = upcomingSeudot[0].eventId;
-        const eventSeudot = upcomingSeudot
-          .filter(s => s.eventId === nextSeudotEventId)
-          .sort((a, b) => ALL_SEUDOT.indexOf(a.type) - ALL_SEUDOT.indexOf(b.type));
-        msg += `🍽 *סעודות — ${upcomingSeudot[0].eventTitle}:*\n`;
+      if (nextEvent) {
+        const eventSeudot = seudotForEvent(nextEvent, fsSeudot);
+        msg += `🍽 *סעודות — ${nextEvent.title}:*\n`;
         eventSeudot.forEach(s => {
           const sRegs = regs.filter(r => r.seudahId === s.id);
           // Household residents + permanent guests are always at the table
@@ -134,10 +120,10 @@ export function Settings({ user, isAdmin }: SettingsProps) {
         msg += `_כולל ${AUTO_ATTENDEES_COUNT} קבועים: ${AUTO_ATTENDEES.map(p => p.name).join(', ')}_\n`;
       }
 
-      openWhatsApp(MOM_PHONE, msg);
+      openWhatsApp(reportPhone, msg);
       showToast('פתיחת WhatsApp...');
-    } catch (e: unknown) {
-      showToast((e as Error).message, 'error');
+    } catch {
+      showToast('יצירת הדו"ח נכשלה', 'error');
     } finally {
       setLoadingReport(false);
     }
@@ -151,81 +137,53 @@ export function Settings({ user, isAdmin }: SettingsProps) {
       </div>
 
       <div className="space-y-5">
-        {/* Report */}
-        <Card>
-          <CardHeader>
-            <CardTitle><Send size={18} className="text-success" /> דוח שבועי</CardTitle>
-          </CardHeader>
-          <p className="text-sm text-text-muted mb-4">שלח דו"ח שבועי לאמא בוואטסאפ עם סיכום כל האירועים, ההזמנות והאוכל.</p>
-          <Button variant="success" onClick={generateWhatsAppReport} loading={loadingReport}>
-            <Send size={16} /> שלח דוח לאמא 📱
-          </Button>
-        </Card>
-
-        {/* Admin claim */}
-        {!isAdmin && (
+        {/* Report — admin only (sends the full family roster to the configured number) */}
+        {isAdmin && (
           <Card>
             <CardHeader>
-              <CardTitle><Shield size={18} className="text-primary" /> הרשאות מנהל</CardTitle>
+              <CardTitle><Send size={18} className="text-success" /> דוח שבועי</CardTitle>
             </CardHeader>
-            <p className="text-sm text-text-muted mb-4">אם אתה חבר משפחה מאושר, תוכל לתבוע הרשאות מנהל.</p>
-            <Button variant="secondary" onClick={handleClaimAdmin}>
-              <Shield size={16} /> תבע הרשאות מנהל
+            <p className="text-sm text-text-muted mb-4">שלח דו"ח שבועי בוואטסאפ עם סיכום כל האירועים, ההזמנות והאוכל.</p>
+            <Button variant="success" onClick={generateWhatsAppReport} loading={loadingReport}>
+              <Send size={16} /> שלח דוח 📱
             </Button>
           </Card>
         )}
 
-        {/* API key - admin only */}
+        {/* Admin config: API key + report recipient — admin only */}
         {isAdmin && (
-          <>
-            <Card>
-              <CardHeader>
-                <CardTitle><Key size={18} className="text-primary" /> מפתח Anthropic API</CardTitle>
-              </CardHeader>
-              <div className="space-y-3">
-                <div className="relative">
-                  <Input
-                    label="מפתח API"
-                    type={showKey ? 'text' : 'password'}
-                    value={apiKey}
-                    onChange={e => setApiKey(e.target.value)}
-                    placeholder="sk-ant-..."
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowKey(v => !v)}
-                    className="absolute left-3 top-9 text-text-muted hover:text-text-base"
-                    aria-label={showKey ? 'הסתר' : 'הצג'}
-                  >
-                    {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-                <Button onClick={saveApiKey} size="sm">שמור מפתח</Button>
+          <Card>
+            <CardHeader>
+              <CardTitle><Key size={18} className="text-primary" /> הגדרות מנהל</CardTitle>
+            </CardHeader>
+            <div className="space-y-3">
+              <div className="relative">
+                <Input
+                  label="מפתח Anthropic API"
+                  type={showKey ? 'text' : 'password'}
+                  value={apiKey}
+                  onChange={e => setApiKey(e.target.value)}
+                  placeholder="sk-ant-..."
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKey(v => !v)}
+                  className="absolute left-3 top-9 text-text-muted hover:text-text-base"
+                  aria-label={showKey ? 'הסתר' : 'הצג'}
+                >
+                  {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
-            </Card>
-
-            {/* Pending users */}
-            {pendingUsers.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle><Users size={18} className="text-warning" /> משתמשים ממתינים ({pendingUsers.length})</CardTitle>
-                </CardHeader>
-                <div className="space-y-2">
-                  {pendingUsers.map(u => (
-                    <div key={u.uid} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm text-text-base">{u.name || u.email}</p>
-                        <p className="text-xs text-text-muted">{u.email}</p>
-                      </div>
-                      <Button size="sm" onClick={() => handleApprove(u.uid, u.email)}>
-                        אשר
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            )}
-          </>
+              <Input
+                label={'מספר יעד לדו"ח (WhatsApp)'}
+                type="tel"
+                value={reportPhone}
+                onChange={e => setReportPhone(e.target.value)}
+                placeholder="972500000000"
+              />
+              <Button onClick={saveApiKey} size="sm">שמור הגדרות</Button>
+            </div>
+          </Card>
         )}
 
         {/* About Shteinberg App */}

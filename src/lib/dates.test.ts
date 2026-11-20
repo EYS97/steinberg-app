@@ -18,6 +18,7 @@ import {
   hebrewAnniversaryInYear,
   formatGregorianDate,
   formatDateByMode,
+  normalizeHolidayTitle,
   HDate,
   months,
 } from './dates';
@@ -68,6 +69,42 @@ describe('conversion', () => {
     const g = convertHebrewToGregorian({ day: 30, month: months.ADAR_I, year: 5786 });
     const h = convertGregorianToHebrew(g);
     expect(h.day).toBe(29);
+  });
+});
+
+describe('normalizeHolidayTitle', () => {
+  it('rewrites the numeric year in Rosh Hashanah titles to gematriya', () => {
+    expect(normalizeHolidayTitle('ראש השנה 5787')).toBe(`ראש השנה ה${GERESH}תשפ${GERSHAYIM}ז`);
+    expect(normalizeHolidayTitle('ראש השנה 5788')).toBe(`ראש השנה ה${GERESH}תשפ${GERSHAYIM}ח`);
+  });
+
+  it('handles the Hebcal title with nikud too', () => {
+    expect(normalizeHolidayTitle('רֹאשׁ הַשָּׁנָה 5787')).toBe(`רֹאשׁ הַשָּׁנָה ה${GERESH}תשפ${GERSHAYIM}ז`);
+  });
+
+  it('leaves every other holiday title unchanged', () => {
+    for (const t of [
+      `ראש השנה ב${GERESH}`,
+      'ערב ראש השנה',
+      'יום כיפור',
+      `סוכות א${GERESH}`,
+      `סוכות ב${GERESH} (חוה${GERSHAYIM}מ)`,
+      'שמיני עצרת',
+      'פסח',
+      '',
+    ]) {
+      expect(normalizeHolidayTitle(t)).toBe(t);
+    }
+  });
+
+  it('does not touch non-year numbers or longer digit runs', () => {
+    expect(normalizeHolidayTitle('אירוע 2026')).toBe('אירוע 2026');
+    expect(normalizeHolidayTitle('מספר 57870')).toBe('מספר 57870');
+  });
+
+  it('is idempotent', () => {
+    const once = normalizeHolidayTitle('ראש השנה 5787');
+    expect(normalizeHolidayTitle(once)).toBe(once);
   });
 });
 

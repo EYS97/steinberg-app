@@ -8,6 +8,9 @@ import { Header } from './Header';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { signInWithGoogle, signOut } from '@/hooks/useAuth';
+import { useLifecycle } from '@/hooks/useLifecycle';
+import { FamilyOnboarding } from '@/components/onboarding/FamilyOnboarding';
+import { cn } from '@/lib/utils';
 import type { User } from 'firebase/auth';
 
 interface LayoutProps {
@@ -15,19 +18,38 @@ interface LayoutProps {
   isAdmin: boolean;
 }
 
+const SIDEBAR_COLLAPSED_KEY = 'steinberg-sidebar-collapsed';
+
 export function Layout({ user, isAdmin }: LayoutProps) {
   const location = useLocation();
   const [showUserModal, setShowUserModal] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1'; } catch { return false; }
+  });
+  const toggleCollapsed = () => setCollapsed(prev => {
+    const next = !prev;
+    try { localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? '1' : '0'); } catch { /* ignore */ }
+    return next;
+  });
   const name = user?.displayName || user?.email || 'אורח';
   const email = user?.email || '';
 
+  // Family-lifecycle onboarding: offered only to a member named by a
+  // `familyLifecycle` record who has not completed that onboarding version.
+  // Everyone else gets `eligible === null` and sees nothing.
+  const { eligible, context, completeOnboarding } = useLifecycle(user);
+  const [onboardingDeferred, setOnboardingDeferred] = useState(false);
+  const showOnboarding = !!eligible && !!context?.member && !onboardingDeferred;
+
   return (
-    <div className="app-layout">
+    <div className={cn('app-layout', collapsed && 'sidebar-collapsed')}>
       {/* Desktop Sidebar */}
       <div className="app-sidebar">
         <Sidebar
           user={user}
           isAdmin={isAdmin}
+          collapsed={collapsed}
+          onToggleCollapse={toggleCollapsed}
           onSignIn={signInWithGoogle}
           onSignOut={() => { setShowUserModal(false); signOut(); }}
         />
@@ -53,7 +75,17 @@ export function Layout({ user, isAdmin }: LayoutProps) {
       </main>
 
       {/* Mobile bottom nav */}
-      <MobileNav />
+      <MobileNav isAdmin={isAdmin} />
+
+      {/* Family-lifecycle onboarding (data-driven; null for everyone else) */}
+      {showOnboarding && eligible && context && (
+        <FamilyOnboarding
+          lifecycle={eligible}
+          context={context}
+          onComplete={completeOnboarding}
+          onDismiss={() => setOnboardingDeferred(true)}
+        />
+      )}
 
       {/* User modal */}
       <Modal

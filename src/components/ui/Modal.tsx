@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -18,7 +19,11 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }: M
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    document.body.classList.add('modal-open');
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.classList.remove('modal-open');
+    };
   }, [open, onClose]);
 
   const widths: Record<string, string> = {
@@ -28,10 +33,10 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }: M
     xl: 'max-w-4xl',
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -70,14 +75,15 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }: M
 
             {/* Footer */}
             {footer && (
-              <div className="p-5 border-t border-border bg-surface sticky bottom-0">
+              <div className="p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:pb-5 border-t border-border bg-surface sticky bottom-0">
                 {footer}
               </div>
             )}
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
 

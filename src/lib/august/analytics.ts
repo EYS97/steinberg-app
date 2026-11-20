@@ -136,10 +136,12 @@ export interface PeaceScore {
 const RED_PENALTY = 12;
 const YELLOW_PENALTY = 5;
 
-/** 100 minus weighted penalties for open issues. Banded green/yellow/red. */
+/** 100 minus weighted penalties for open issues. Banded green/yellow/red.
+ *  Logistics (info) issues are free — an unassigned pickup isn't anxiety. */
 export function peaceOfMind(issues: AugustIssue[]): PeaceScore {
   const penalty = issues.reduce(
-    (p, i) => p + (i.severity === 'red' ? RED_PENALTY : YELLOW_PENALTY),
+    (p, i) =>
+      p + (i.severity === 'red' ? RED_PENALTY : i.severity === 'yellow' ? YELLOW_PENALTY : 0),
     0
   );
   const score = Math.max(0, 100 - penalty);

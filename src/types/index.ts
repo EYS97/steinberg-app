@@ -25,6 +25,28 @@ export interface Family {
   createdAt?: Timestamp;
 }
 
+// ── Family tree ───────────────────────────────────────────────────────────
+export interface TreePerson {
+  id: string;
+  nameHe?: string;
+  nameLatin?: string;
+  nickname?: string;
+  maidenName?: string;
+  gender?: 'm' | 'f';
+  birthYear?: number | null;
+  birthCity?: string;
+  deathYear?: number | null;
+  originCountry?: string;
+  burialPlace?: string;
+  story?: string;
+  /** Data-URL of a small (200px) profile photo */
+  photoData?: string | null;
+  fatherId?: string | null;
+  motherId?: string | null;
+  spouseId?: string | null;
+  createdAt?: Timestamp;
+}
+
 // ── Rooms ─────────────────────────────────────────────────────────────────
 export interface Room {
   id: string;
@@ -38,31 +60,30 @@ export interface Room {
 
 export const ROOMS: Room[] = [
   { id: 'penina',    name: 'חדר פנינה', icon: '🛏', cap: '4 מיטות בודדות',    detail: 'מתאים עד 4 אנשים',               maxAdults: 4 },
-  { id: 'israel',   name: 'חדר ישראל', icon: '🛏', cap: 'זוג או 2 בודדים',   detail: 'עם מיטה זוגית / שתי יחידות',    maxAdults: 2 },
-  { id: 'yehuda',   name: 'חדר יהודה', icon: '🛏', cap: 'זוג + תינוק',        detail: 'עריסה זמינה',                     maxAdults: 2, hasCrib: true },
+  // Display names only — the ids are stable keys that bookings/locks reference.
+  // June 2026: ישראל התחתן ועבר; חדרו הפך לחדר יהודה, וחדר יהודה הישן — לסלון.
+  { id: 'israel',   name: 'חדר יהודה', icon: '🛏', cap: 'זוג או 2 בודדים',   detail: 'עם מיטה זוגית / שתי יחידות',    maxAdults: 2 },
+  { id: 'yehuda',   name: 'סלון',      icon: '🛏', cap: 'זוג + תינוק',        detail: 'עריסה זמינה',                     maxAdults: 2, hasCrib: true },
   { id: 'hayechida',name: 'היחידה',    icon: '🏠', cap: 'זוג + תינוק',        detail: 'כניסה עצמאית',                   maxAdults: 2, hasCrib: true },
 ];
 
 // ── Permanent attendees (household residents + permanent guest) ───────────
-/** A person automatically counted in every seudah — never registered manually */
+/** A person automatically counted in every seudah — never registered manually.
+ *  Residents do not occupy bookable rooms: every room's full capacity is for guests. */
 export interface PermanentAttendee {
   name: string;
   /** Household resident (lives at home) vs external permanent guest */
   isResident: boolean;
-  /** Room the resident permanently occupies — its beds are not bookable */
-  roomId?: string;
-  /** Beds taken in that room (default 1) */
-  beds?: number;
 }
 
 export const HOUSEHOLD_RESIDENTS: PermanentAttendee[] = [
   { name: 'אבא',   isResident: true },
   { name: 'אמא',   isResident: true },
-  { name: 'פנינה', isResident: true, roomId: 'penina', beds: 1 },
-  { name: 'סבא',   isResident: true, roomId: 'israel', beds: 1 },
+  { name: 'פנינה', isResident: true },
+  { name: 'סבא',   isResident: true },
 ];
 
-/** External permanent guests — counted in every seudah but never sleep over */
+/** External permanent guests (לושה — male) — counted in every seudah but never sleep over */
 export const PERMANENT_GUESTS: PermanentAttendee[] = [
   { name: 'לושה', isResident: false },
 ];
@@ -70,17 +91,6 @@ export const PERMANENT_GUESTS: PermanentAttendee[] = [
 export const AUTO_ATTENDEES: PermanentAttendee[] = [...HOUSEHOLD_RESIDENTS, ...PERMANENT_GUESTS];
 /** Base attendance of every seudah before any registrations */
 export const AUTO_ATTENDEES_COUNT = AUTO_ATTENDEES.length;
-
-/** Residents permanently occupying the given room */
-export function permanentOccupants(roomId: string): PermanentAttendee[] {
-  return HOUSEHOLD_RESIDENTS.filter(p => p.roomId === roomId);
-}
-
-/** Beds left for guest assignment after permanent occupants */
-export function availableBeds(room: Room): number {
-  const taken = permanentOccupants(room.id).reduce((s, p) => s + (p.beds ?? 1), 0);
-  return Math.max(0, room.maxAdults - taken);
-}
 
 // ── Booking ───────────────────────────────────────────────────────────────
 export interface Booking {
@@ -95,6 +105,10 @@ export interface Booking {
   notes: string;
   mealParticipation: string[];
   isExternalGuest?: boolean;
+  /** Auth uid of the user who made the booking. Only this user (or an admin)
+   *  may cancel it. Absent on legacy bookings created before this field — those
+   *  are admin-cancel-only. */
+  createdBy?: string;
   createdAt?: Timestamp;
 }
 
@@ -171,6 +185,108 @@ export interface Seudah {
   type: SeudahType;
   createdAt?: Timestamp;
   createdBy?: string;
+  /** True for auto-default seudot that aren't (yet) stored in Firestore. Always
+   *  present for every Shabbat/holiday — families join them, nobody creates them. */
+  synthetic?: boolean;
+}
+
+/** The seudot every Shabbat/holiday has by default. */
+export function defaultSeudotTypes(eventType?: string): SeudahType[] {
+  return eventType === 'holiday' ? HOLIDAY_SEUDOT : SHABBAT_SEUDOT;
+}
+
+/** Deterministic id for an auto-default seudah (so registrations can target it
+ *  without anyone having created a Firestore doc). */
+export function defaultSeudahId(eventId: string, type: SeudahType): string {
+  return `${eventId}__${type}`;
+}
+
+/**
+ * Every Shabbat/holiday automatically has its seudot — users only choose whether
+ * to join. Returns the default seudot for the event in canonical order, reusing
+ * any Firestore doc that already exists for a type (so legacy registrations keep
+ * working) and synthesizing the rest. Manually-added seudot of non-default types
+ * (e.g. a holiday that also falls on Shabbat) are appended.
+ */
+export function seudotForEvent(
+  event: { id: string; title?: string; type?: string } | undefined | null,
+  all: Seudah[]
+): Seudah[] {
+  if (!event) return [];
+  const fs = all.filter(s => s.eventId === event.id);
+  const byType = new Map(fs.map(s => [s.type, s]));
+  const defaults = defaultSeudotTypes(event.type);
+  const out: Seudah[] = defaults.map(
+    type =>
+      byType.get(type) ?? {
+        id: defaultSeudahId(event.id, type),
+        eventId: event.id,
+        eventTitle: event.title || '',
+        type,
+        synthetic: true,
+      }
+  );
+  fs.forEach(s => { if (!defaults.includes(s.type)) out.push(s); });
+  return out.sort((a, b) => ALL_SEUDOT.indexOf(a.type) - ALL_SEUDOT.indexOf(b.type));
+}
+
+// ── Guest-family limit (מגבלת משפחות מתארחות) ─────────────────────────────
+/** Meal-level request status. Legacy registrations have no status field and
+ *  are treated as 'approved' everywhere (safe runtime fallback — never migrate). */
+export type MealRequestStatus =
+  | 'approved'
+  | 'pendingAdminApproval'
+  | 'rejected'
+  | 'cancelled';
+
+export type ApprovalSource =
+  | 'automaticWithinLimit'
+  | 'adminApproved'
+  | 'hostInvited';
+
+export const MEAL_REQUEST_STATUS_LABELS: Record<MealRequestStatus, string> = {
+  approved: 'מאושר ✓',
+  pendingAdminApproval: 'ממתין לבדיקה',
+  rejected: 'לא אושר',
+  cancelled: 'בוטל',
+};
+
+/**
+ * Per-event meal configuration (doc id = eventId, collection `eventMealConfig`).
+ * Lives in its own collection because auto-generated Shabbat/holiday events have
+ * no Firestore doc of their own. Limits are keyed by seudah *type* — stable for
+ * both synthetic seudot and Firestore-doc seudot of the same event.
+ */
+export interface EventMealConfig {
+  id: string; // == eventId
+  /** Max complete guest families with children per seudah type. Missing key ⇒ default 2. */
+  limits?: Partial<Record<SeudahType, number>>;
+  /** The hosting nuclear family for this event; null/absent ⇒ the household hosts. */
+  hostFamilyId?: string | null;
+  updatedAt?: Timestamp;
+  updatedBy?: string;
+}
+
+/** Audit log entry for the guest-family-limit mechanism (`mealLimitAudit`). */
+export interface MealLimitAudit {
+  id: string;
+  action:
+    | 'attendanceRequested'
+    | 'autoApproved'
+    | 'sentToAdminApproval'
+    | 'adminApproved'
+    | 'adminRejected'
+    | 'attendanceCancelled'
+    | 'autoApprovedAfterCancellation'
+    | 'mealFamilyLimitChanged'
+    | 'hostInvitedFamily';
+  eventId: string;
+  seudahType?: string;
+  familyId?: string;
+  performedByUserId?: string;
+  previousValue?: unknown;
+  newValue?: unknown;
+  createdAt?: Timestamp;
 }
 
 /**
@@ -191,6 +307,23 @@ export interface SeudahRegistration {
   bringing?: string;
   createdAt?: Timestamp;
   createdBy?: string;
+  // ── Guest-family-limit fields (all optional — absent on legacy docs) ────
+  /** Absent on legacy docs ⇒ treated as 'approved'. */
+  status?: MealRequestStatus;
+  approvalSource?: ApprovalSource | null;
+  /** Queue key for FIFO promotion; falls back to createdAt on older docs. */
+  requestedAt?: Timestamp;
+  approvedAt?: Timestamp;
+  approvedByUserId?: string;
+  rejectedAt?: Timestamp;
+  rejectedByUserId?: string;
+  cancelledAt?: Timestamp;
+  /** True when approved automatically after waiting (place became available). */
+  promotedAfterWait?: boolean;
+  /** Seudah type snapshot — lets admin screens label requests without loading seudot. */
+  seudahType?: string;
+  /** Event title snapshot for admin screens. */
+  eventTitle?: string;
 }
 
 // ── Guests ────────────────────────────────────────────────────────────────
@@ -306,6 +439,34 @@ export interface HostingRequest {
   createdBy?: string;
 }
 
+// ── User analytics (userActivity collection, doc id = auth uid) ───────────
+/**
+ * Usage analytics per user. Lives in the existing `userActivity` collection —
+ * the base doc is written at login (useAuth) and the Home screen visit
+ * counters are updated by useTrackHomeVisit. Reads are admin-only by
+ * Firestore rules; each user may only write their own doc.
+ *
+ * Extensible for future engagement metrics — add counters alongside
+ * totalHomeVisits (planned: hostingOffersCreated, guestRegistrations,
+ * mealRegistrations, sleepRegistrations, matchApprovals, notificationsOpened).
+ */
+export interface UserAnalytics {
+  uid: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  /** Search keys for server-side prefix search */
+  nameLower?: string | null;
+  emailLower?: string | null;
+  phoneDigits?: string | null;
+  /** Auth account creation time; null on legacy docs where it is unknown */
+  registrationDate: Timestamp | null;
+  totalHomeVisits: number;
+  /** null = never visited the Home screen */
+  lastHomeVisitAt: Timestamp | null;
+  lastSeen?: Timestamp;
+}
+
 // ── Settings ──────────────────────────────────────────────────────────────
 export interface AppSettings {
   anthropicApiKey?: string;
@@ -329,10 +490,11 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'seudot',        label: 'סעודות',     icon: '🍽', path: '/seudot',        showInMobile: false },
   { id: 'hosting',       label: 'אירוחים',    icon: '🏡', path: '/hosting',       showInMobile: true },
   { id: 'family',        label: 'משפחה',      icon: '👨‍👩‍👧‍👦', path: '/family',        showInMobile: true },
+  { id: 'august',        label: 'אוגוסט',     icon: '🏖', path: '/august',        showInMobile: true },
   { id: 'family-tree',   label: 'עץ משפחה',  icon: '🌳', path: '/family-tree',   showInMobile: false },
   { id: 'notifications', label: 'התראות',     icon: '🔔', path: '/notifications', showInMobile: false },
   { id: 'settings',      label: 'הגדרות',     icon: '⚙', path: '/settings',      showInMobile: false },
-  { id: 'admin',         label: 'ניהול',      icon: '🛡', path: '/admin',         adminOnly: true, showInMobile: false },
+  { id: 'admin',         label: 'ניהול',      icon: '🛡', path: '/admin',         adminOnly: true, showInMobile: true },
 ];
 
 export const MOBILE_NAV_ITEMS = NAV_ITEMS.filter(n => n.showInMobile);

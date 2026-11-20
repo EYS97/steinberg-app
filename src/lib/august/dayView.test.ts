@@ -146,12 +146,14 @@ describe('parentTimeline', () => {
 
 describe('dayBadge', () => {
   const gap: AugustIssue = { id: '1', date: 'd', severity: 'red', kind: 'coverage_gap', message: '' };
-  const conflict: AugustIssue = { id: '2', date: 'd', severity: 'red', kind: 'conflict', message: '' };
+  const conflict: AugustIssue = { id: '2', date: 'd', severity: 'yellow', kind: 'conflict', message: '' };
   const yellow: AugustIssue = { id: '3', date: 'd', severity: 'yellow', kind: 'overlap', message: '' };
-  it('ranks conflict above a plain coverage gap', () => {
-    expect(dayBadge([gap, conflict], true)).toBe('conflict');
-    expect(dayBadge([gap], true)).toBe('uncovered');
+  const logistics: AugustIssue = { id: '4', date: 'd', severity: 'info', kind: 'missing_pickup', message: '' };
+  it('ranks a true coverage gap above everything; logistics never colors the day', () => {
+    expect(dayBadge([gap, conflict], true)).toBe('uncovered');
+    expect(dayBadge([conflict], true)).toBe('conflict');
     expect(dayBadge([yellow], true)).toBe('attention');
+    expect(dayBadge([logistics], true)).toBe('covered');
     expect(dayBadge([], true)).toBe('covered');
     expect(dayBadge([], false)).toBe('empty');
   });

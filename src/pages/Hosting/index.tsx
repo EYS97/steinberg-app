@@ -15,6 +15,7 @@ import {
   rejectRequest, cancelRequest
 } from '@/hooks/useHosting';
 import { useEvents } from '@/hooks/useEvents';
+import { useClosedEvents } from '@/hooks/useBookings';
 import { useFamilies } from '@/hooks/useFamilies';
 import { useToast } from '@/components/ui/Toast';
 import { REQUEST_STATUS_LABELS } from '@/types';
@@ -38,6 +39,9 @@ export function Hosting({ user, isAdmin }: HostingProps) {
   const { availability, requests, loading } = useHosting();
   const { data: events } = useEvents();
   const { data: families } = useFamilies();
+  const closedEventIds = useClosedEvents();
+  // Closed event = registration fully closed (sleeping + meals)
+  const isEventClosed = (eventId: string) => closedEventIds.includes(eventId) && !isAdmin;
 
   // Deep links from the Home action bar: { tab } or { openWizard }
   const navState = (useLocation().state ?? {}) as { tab?: Tab; openWizard?: boolean };
@@ -157,6 +161,10 @@ export function Hosting({ user, isAdmin }: HostingProps) {
   }
 
   function openGuestRequest(avail: HostingAvailability) {
+    if (isEventClosed(avail.eventId)) {
+      showToast('ההרשמה לשינה ולסעודות סגורה לאירוע זה', 'error');
+      return;
+    }
     setSelectedAvail(avail);
     setGuestModal(true);
   }
@@ -247,13 +255,18 @@ export function Hosting({ user, isAdmin }: HostingProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {openSlots.map(h => {
                 const isMine = h.createdBy === myFamilyId;
+                const closed = isEventClosed(h.eventId);
                 return (
-                  <Card key={h.id} hover={!isMine}>
+                  <Card key={h.id} hover={!isMine && !closed}>
                     <div className="flex items-start justify-between mb-3">
                       <div className="w-12 h-12 rounded-card bg-accent/10 flex items-center justify-center text-2xl shrink-0">
                         🏡
                       </div>
-                      <Badge variant="success">פתוח</Badge>
+                      {closed ? (
+                        <Badge variant="error">ההרשמה סגורה</Badge>
+                      ) : (
+                        <Badge variant="success">פתוח</Badge>
+                      )}
                     </div>
                     <h3 className="font-bold text-primary">{h.familyName}</h3>
                     <div className="flex items-center gap-1.5 text-text-muted text-sm mt-1">
@@ -282,6 +295,10 @@ export function Hosting({ user, isAdmin }: HostingProps) {
                           onClick={() => cancelHostingAvailability(h.id).then(() => showToast('האירוח בוטל'))}
                         >
                           בטל אירוח
+                        </Button>
+                      ) : closed ? (
+                        <Button size="sm" disabled>
+                          🔒 ההרשמה סגורה
                         </Button>
                       ) : (
                         <Button size="sm" onClick={() => openGuestRequest(h)}>

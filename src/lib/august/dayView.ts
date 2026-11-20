@@ -272,14 +272,18 @@ export const DAY_BADGE_LABEL: Record<DayBadge, string> = {
   covered:   '🟢 מכוסה',
   attention: '🟡 דורש החלטה',
   uncovered: '🔴 חוסר כיסוי',
-  conflict:  '❌ התנגשות',
+  conflict:  '⚠️ התנגשות',
   empty:     '⚪ לא מתוכנן',
 };
 
-/** Header status for the day — conflict outranks a plain coverage gap. */
+/**
+ * Header status for the day. Red is reserved for true uncovered child time, so
+ * a coverage gap outranks everything; a conflict is a decision to make, not a
+ * hole. Info-severity logistics never colors the day.
+ */
 export function dayBadge(dateIssues: AugustIssue[], hasItems: boolean): DayBadge {
-  if (dateIssues.some(i => i.kind === 'conflict')) return 'conflict';
   if (dateIssues.some(i => i.kind === 'coverage_gap')) return 'uncovered';
+  if (dateIssues.some(i => i.kind === 'conflict')) return 'conflict';
   if (dateIssues.some(i => i.severity === 'yellow')) return 'attention';
   return hasItems ? 'covered' : 'empty';
 }

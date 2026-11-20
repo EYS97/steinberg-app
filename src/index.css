@@ -4,19 +4,19 @@
 
 @layer base {
   :root {
-    --primary: #8B5E3C;
-    --primary-light: #A8764D;
-    --primary-dark: #6D472D;
-    --accent: #0EA5A4;
-    --accent-light: #14C4C3;
-    --background: #F8F6F2;
+    --primary: #1F5E7A;
+    --primary-light: #2E7795;
+    --primary-dark: #174A61;
+    --accent: #A66A2B;
+    --accent-light: #C28442;
+    --background: #FAF8F5;
     --surface: #FFFFFF;
-    --surface-alt: #F2EEE8;
-    --border: #E0D8CE;
-    --text-base: #1C1008;
-    --text-mid: #5C3D28;
-    --text-muted: #9B7B65;
-    --success: #22C55E;
+    --surface-alt: #F3EFE8;
+    --border: rgba(31, 94, 122, 0.12);
+    --text-base: #1F2933;
+    --text-mid: #3E4C59;
+    --text-muted: #5B6770;
+    --success: #2E7D32;
     --warning: #F59E0B;
     --error: #EF4444;
     --info: #3B82F6;
@@ -83,7 +83,7 @@
   }
 
   .glass-warm {
-    background: rgba(248, 246, 242, 0.90);
+    background: rgba(250, 248, 245, 0.90);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
   }
@@ -118,6 +118,15 @@
   flex-direction: column;
 }
 
+/* Compact (collapsed) desktop sidebar — icons + tooltips only.
+   Overriding the CSS var here cascades to both .app-sidebar (width) and
+   .app-content (margin), so the canvas reclaims the freed width. */
+.app-layout.sidebar-collapsed {
+  --sidebar-width: 76px;
+}
+.app-sidebar { transition: width 0.18s ease; }
+.app-content { transition: margin-right 0.18s ease; }
+
 @media (max-width: 768px) {
   .app-sidebar { display: none; }
   .app-content { margin-right: 0; padding-bottom: 72px; }
@@ -140,6 +149,11 @@
 @media (max-width: 768px) {
   .mobile-nav { display: flex; }
 }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+
+/* While a modal/sheet is open: no scroll behind it, no bottom nav over it */
+body.modal-open { overflow: hidden; }
+body.modal-open .mobile-nav { display: none; }
 
 /* Page transitions */
 .page-enter {
@@ -190,4 +204,28 @@
 
 .cal-day:hover:not(.empty) {
   background: var(--surface-alt);
+}
+
+/* ── Print: Shabbat / Holiday summary report ──────────────────────────────
+   Strip the app chrome (sidebar, mobile nav, top header, on-screen controls)
+   so the report prints cleanly on its own page. Tailwind supplies the
+   break-inside-avoid / print: utilities used in the page itself. */
+.only-print { display: none; }
+
+@media print {
+  .app-sidebar,
+  .mobile-nav,
+  header,
+  .no-print { display: none !important; }
+
+  .app-layout,
+  .app-content { display: block !important; margin-right: 0 !important; }
+
+  body { background: #fff !important; }
+
+  .only-print { display: block; }
+
+  .report-page .shadow-card { box-shadow: none !important; }
+
+  @page { margin: 1.5cm; }
 }

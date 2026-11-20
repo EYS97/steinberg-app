@@ -1,4 +1,5 @@
 import { timeToMinutes, minutesToTime, isWeekendDate, itemOccurrences } from './plan';
+import { familyHolidayDates } from './holiday';
 import {
   COVERING_TYPES, PARENT_BUSY_TYPES,
 } from '@/types/august';
@@ -15,7 +16,14 @@ import type {
 // days would bury the real signals. A day counts as active if any member has an
 // item on it (so "both parents work, child uncovered" is correctly caught).
 
-export type IssueSeverity = 'red' | 'yellow';
+// Severity ladder — the visual contract of the command center:
+//   red    = TRUE uncovered child time, nothing else. Red always means "a child
+//            has no one responsible for them right now".
+//   yellow = needs a decision (parent double-booked with care, schedule overlap)
+//            but the child does have someone assigned.
+//   info   = optional logistics (missing pickup/dropoff driver). Never affects
+//            a day's coverage status — a day with only info issues is covered.
+export type IssueSeverity = 'red' | 'yellow' | 'info';
 export type IssueKind =
   | 'coverage_gap'
   | 'conflict'
@@ -115,12 +123,15 @@ export function detectIssues(
   const nameOf = (id?: string) => members.find(m => m.id === id)?.name ?? '—';
 
   const byDate = expandByDate(items);
+  const holidays = familyHolidayDates(items);
   const issues: AugustIssue[] = [];
 
   for (const [date, dayItems] of byDate) {
-    // ── Coverage gaps per child (weekdays only) ──────────────────────────
+    // ── Coverage gaps per child ──────────────────────────────────────────
     // On Fri/Sat the kids are with the parents, so no coverage is required.
-    if (!isWeekendDate(date)) {
+    // Same on family-holiday days: the family is together — nobody needs to
+    // be "on duty", so the whole day counts as covered for every child.
+    if (!isWeekendDate(date) && !holidays.has(date)) {
       for (const child of children) {
         const covering = dayItems.filter(
           it => it.personId === child.id && COVERING_TYPES.includes(it.type)
@@ -154,7 +165,7 @@ export function detectIssues(
             issues.push({
               id: `conflict_${parent.id}_${date}_${c.id}`,
               date,
-              severity: 'red',
+              severity: 'yellow',
               kind: 'conflict',
               personId: parent.id,
               message: `${parent.name} משובץ/ת לעבודה ולשמירה על ${nameOf(c.personId)} בין ${minutesToTime(s)}–${minutesToTime(e)}`,
@@ -197,7 +208,7 @@ export function detectIssues(
       issues.push({
         id: `dropoff_${it.id}`,
         date: it.date,
-        severity: 'yellow',
+        severity: 'info',
         kind: 'missing_dropoff',
         personId: it.personId,
         message: `חסרה הורדה ל"${it.title}" (${nameOf(it.personId)})`,
@@ -207,7 +218,7 @@ export function detectIssues(
       issues.push({
         id: `pickup_${it.id}`,
         date: it.date,
-        severity: 'yellow',
+        severity: 'info',
         kind: 'missing_pickup',
         personId: it.personId,
         message: `חסר איסוף מ"${it.title}" (${nameOf(it.personId)})`,
@@ -230,7 +241,11 @@ export function detectIssues(
   );
 }
 
-/** Status for one day given its issues and whether it has any items. */
+/**
+ * Status for one day given its issues and whether it has any items.
+ * Info-severity (logistics) issues never change a day's status — a day whose
+ * only problem is a missing pickup driver is still a covered day.
+ */
 export function dayStatus(dateIssues: AugustIssue[], hasItems: boolean): DayStatus {
   if (dateIssues.some(i => i.severity === 'red')) return 'red';
   if (dateIssues.some(i => i.severity === 'yellow')) return 'yellow';
@@ -244,7 +259,8 @@ export interface AugustSummary {
   openIssues: number;
 }
 
-/** Roll issues up to day-level counts for the summary tiles. */
+/** Roll issues up to day-level counts. Logistics (info) never counts a day as
+ *  a problem and is excluded from openIssues — it has its own separate count. */
 export function summarize(
   issues: AugustIssue[],
   datesWithItems: Set<string>,
@@ -259,5 +275,6 @@ export function summarize(
     else if (yellowDays.has(date)) attention++;
     else covered++;
   }
-  return { covered, attention, gaps, openIssues: issues.length };
+  const openIssues = issues.filter(i => i.severity !== 'info').length;
+  return { covered, attention, gaps, openIssues };
 }

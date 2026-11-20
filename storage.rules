@@ -1,0 +1,12 @@
+// storage.rules
+// האפליקציה אינה משתמשת ב-Cloud Storage (config.ts טוען רק auth + firestore).
+// כברירת מחדל — חוסמים הכל. אם יבוצע בעתיד שימוש ב-Storage, יש להוסיף כאן
+// כללים ממוקדים (לדוגמה: כתיבה רק לנתיב של המשתמש המאושר) במקום לפתוח הכל.
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

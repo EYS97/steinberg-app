@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Trash2, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Trash2, Users, Lock, ClipboardList } from 'lucide-react';
 import { motion } from 'framer-motion';
 import {
   collection,
-  deleteDoc,
   doc,
   writeBatch,
   serverTimestamp,
@@ -15,8 +15,10 @@ import { Modal } from '@/components/ui/Modal';
 import { Input, Select } from '@/components/ui/Input';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Badge } from '@/components/ui/Badge';
-import { useEvents } from '@/hooks/useEvents';
+import { useActiveEvent } from '@/hooks/useActiveEvent';
+import { resolveDefaultEventId, upcomingEventsFrom, computeMealStats } from '@/lib/eventState';
 import { useSeudot, useSeudahRegistrations } from '@/hooks/useSeudot';
+import { useClosedEvents, assertEventOpen, useBookingsForEvent } from '@/hooks/useBookings';
 import { useFamilies } from '@/hooks/useFamilies';
 import { useToast } from '@/components/ui/Toast';
 import { useCalendarMode } from '@/hooks/useCalendarMode';
@@ -24,15 +26,18 @@ import { formatDateByMode } from '@/lib/dates';
 import {
   SHABBAT_SEUDOT,
   HOLIDAY_SEUDOT,
-  ALL_SEUDOT,
   SEUDAH_ICONS,
   BRINGING_OPTIONS,
   HOUSEHOLD_RESIDENTS,
   PERMANENT_GUESTS,
   AUTO_ATTENDEES_COUNT,
 } from '@/types';
-import type { SeudahType, Seudah, SeudahRegistration } from '@/types';
+import type { SeudahType, Seudah, SeudahRegistration, Booking } from '@/types';
 import type { User } from 'firebase/auth';
+import { useEventMealConfig, isEventHost } from '@/hooks/useEventMealConfig';
+import { limitAppliesToEvent, effectiveStatus } from '@/lib/familyLimit';
+import { submitMealRequests, cancelRegistrationAndPromote } from '@/lib/mealLimitOps';
+import { FamilyLimitPanel } from './FamilyLimitPanel';
 
 interface SeudotProps {
   user: User | null;
@@ -64,42 +69,62 @@ function LoadBar({ diners }: { diners: number }) {
 
 export function Seudot({ user, isAdmin }: SeudotProps) {
   const { showToast } = useToast();
-  const { data: events } = useEvents();
-  const { data: seudot, loading } = useSeudot();
+  const navigate = useNavigate();
+  const { events, now } = useActiveEvent();
+  const { data: seudot } = useSeudot();
   const { data: registrations } = useSeudahRegistrations();
   const { data: families } = useFamilies();
   const [calMode] = useCalendarMode();
 
-  // Seudot belong to a Shabbat or holiday
-  const upcomingEvents = events.filter(
-    e => e.date?.toDate?.() >= new Date() && (e.type === 'shabbat' || e.type === 'holiday')
-  );
+  // Seudot belong to a Shabbat or holiday. "Upcoming" is decided by halachic
+  // time, so the current Shabbat/holiday stays selectable until its Tzeit
+  // (Jerusalem) — not until civil noon or midnight. The default is the same
+  // active event the homepage focuses, so the two pages stay in sync.
+  const upcomingEvents = upcomingEventsFrom(events, now, { shabbatHolidayOnly: true });
   const [selectedEventId, setSelectedEventId] = useState('');
-  const eventId = selectedEventId || upcomingEvents[0]?.id || '';
+  const eventId = selectedEventId || resolveDefaultEventId(events, now) || upcomingEvents[0]?.id || '';
   const event = events.find(e => e.id === eventId);
+  const closedEventIds = useClosedEvents();
+  const isClosed = closedEventIds.includes(eventId);
+  const canAct = !isClosed || isAdmin;
   const seudahOptions: SeudahType[] = event?.type === 'holiday' ? HOLIDAY_SEUDOT : SHABBAT_SEUDOT;
 
-  // Seudot + registrations of the selected event, in canonical order
-  const eventSeudot = useMemo(
+  // Room bookings (חדרים) carry their own meal participation. They feed the
+  // seudah count read-only — the booking is still managed on the Rooms page.
+  const { bookings: eventBookings } = useBookingsForEvent(eventId);
+
+  // Guest-family limit (מגבלת משפחות מתארחות) — applies to Shabbat/holiday
+  // events from the rollout date; earlier events keep instant approval.
+  const mealConfig = useEventMealConfig(eventId || null);
+  const isHost = isEventHost(mealConfig, families, user?.email, isAdmin);
+  const limitApplies = limitAppliesToEvent(event);
+  const familiesById = useMemo(() => new Map(families.map(f => [f.id, f])), [families]);
+
+  // All meal counts come from the shared eventState selector — the same code
+  // the homepage uses — so the two pages can never disagree.
+  const meals = useMemo(
+    () => computeMealStats(event, seudot, registrations, eventBookings),
+    [event, seudot, registrations, eventBookings]
+  );
+  const eventSeudot = meals.eventSeudot;
+  const regsFor = (seudahId: string): SeudahRegistration[] =>
+    meals.bySeudahId[seudahId]?.registrations ?? [];
+  const pendingFor = (seudahId: string): SeudahRegistration[] =>
+    meals.bySeudahId[seudahId]?.pendingRegistrations ?? [];
+  const bookingDiners = (b: Booking) => (b.adults || 0) + (b.kids || 0);
+
+  // The current user's rejected requests for this event — shown only to them,
+  // with a neutral message (rejected regs are excluded from every count).
+  const myRejected = useMemo(
     () =>
-      seudot
-        .filter(s => s.eventId === eventId)
-        .sort((a, b) => ALL_SEUDOT.indexOf(a.type) - ALL_SEUDOT.indexOf(b.type)),
-    [seudot, eventId]
+      registrations.filter(
+        r =>
+          r.eventId === eventId &&
+          effectiveStatus(r) === 'rejected' &&
+          r.createdBy === user?.uid
+      ),
+    [registrations, eventId, user?.uid]
   );
-  const eventRegs = useMemo(
-    () => registrations.filter(r => r.eventId === eventId),
-    [registrations, eventId]
-  );
-  const regsBySeudah = useMemo(() => {
-    const map: Record<string, SeudahRegistration[]> = {};
-    eventRegs.forEach(r => { (map[r.seudahId] ??= []).push(r); });
-    return map;
-  }, [eventRegs]);
-  // Every seudah automatically includes the household residents + permanent guest
-  const dinersOf = (seudahId: string) =>
-    AUTO_ATTENDEES_COUNT +
-    (regsBySeudah[seudahId] || []).reduce((sum, r) => sum + (r.diners || 0), 0);
 
   // ── Add seudah modal ──────────────────────────────────────────────────
   const [addModal, setAddModal] = useState(false);
@@ -108,9 +133,11 @@ export function Seudot({ user, isAdmin }: SeudotProps) {
   const existingTypes = eventSeudot.map(s => s.type);
 
   async function handleAddSeudot() {
+    if (!canAct) { showToast('ההזמנות לאירוע זה סגורות', 'error'); return; }
     if (!eventId || !newTypes.length) { showToast('נא לבחור סעודה אחת לפחות', 'error'); return; }
     setAddSubmitting(true);
     try {
+      await assertEventOpen(eventId, isAdmin);
       const batch = writeBatch(db);
       newTypes.forEach(type => {
         batch.set(doc(collection(db, 'seudot')), {
@@ -136,7 +163,10 @@ export function Seudot({ user, isAdmin }: SeudotProps) {
     try {
       const batch = writeBatch(db);
       batch.delete(doc(db, 'seudot', s.id));
-      (regsBySeudah[s.id] || []).forEach(r => batch.delete(doc(db, 'seudahRegistrations', r.id)));
+      // Remove every registration of the seudah, whatever its status.
+      registrations
+        .filter(r => r.seudahId === s.id)
+        .forEach(r => batch.delete(doc(db, 'seudahRegistrations', r.id)));
       await batch.commit();
       showToast('הסעודה הוסרה');
     } catch (e: unknown) {
@@ -161,12 +191,14 @@ export function Seudot({ user, isAdmin }: SeudotProps) {
   const familyName = (f: { husband: string; wife: string; id: string }) =>
     [f.husband, f.wife].filter(Boolean).join(' ו') || f.id;
 
-  // Seudot this family is already registered to (one registration per family per seudah)
+  // Seudot this family is already registered to (one registration per family
+  // per seudah) — an approved registration or a request waiting for approval.
   const alreadyRegistered = (seudahId: string) =>
     !!regForm.familyId &&
-    (regsBySeudah[seudahId] || []).some(r => r.familyId === regForm.familyId);
+    [...regsFor(seudahId), ...pendingFor(seudahId)].some(r => r.familyId === regForm.familyId);
 
   function openRegModal(preselectSeudahId?: string) {
+    if (!canAct) return;
     setRegForm({
       familyId: '',
       seudahIds: preselectSeudahId ? [preselectSeudahId] : [],
@@ -177,6 +209,7 @@ export function Seudot({ user, isAdmin }: SeudotProps) {
   }
 
   async function handleRegister() {
+    if (!canAct) { showToast('ההזמנות לאירוע זה סגורות', 'error'); return; }
     if (!regForm.familyId || !regFamily) { showToast('נא לבחור משפחה', 'error'); return; }
     const targetIds = regForm.seudahIds.filter(id => !alreadyRegistered(id));
     if (!targetIds.length) { showToast('נא לבחור סעודה אחת לפחות', 'error'); return; }
@@ -187,23 +220,36 @@ export function Seudot({ user, isAdmin }: SeudotProps) {
         : [regForm.bringingCategory, regForm.bringingNote.trim()].filter(Boolean).join(' – ');
     setRegSubmitting(true);
     try {
-      const batch = writeBatch(db);
-      targetIds.forEach(seudahId => {
-        batch.set(doc(collection(db, 'seudahRegistrations')), {
-          seudahId,
-          eventId,
-          familyId: regFamily.id,
-          familyName: familyName(regFamily),
-          adults: regAdults,
-          kids: regKids,
-          diners: regDiners,
-          bringing,
-          createdAt: serverTimestamp(),
-          createdBy: user?.uid || '',
-        });
+      await assertEventOpen(eventId, isAdmin);
+      if (!event) throw new Error('אירוע לא נמצא');
+      // Every meal is evaluated independently: within the guest-family limit
+      // (or not a counted family / pre-rollout event) — approved instantly;
+      // over the limit — waits for admin review with a neutral message.
+      const targets = targetIds
+        .map(id => meals.bySeudahId[id])
+        .filter(Boolean)
+        .map(st => ({
+          seudah: st.seudah,
+          mealRegs: [...st.registrations, ...st.pendingRegistrations],
+          mealBookings: st.roomGuests,
+        }));
+      const res = await submitMealRequests({
+        event,
+        config: mealConfig,
+        family: regFamily,
+        familyName: familyName(regFamily),
+        bringing,
+        uid: user?.uid || '',
+        targets,
+        familiesById,
       });
-      await batch.commit();
-      showToast('נרשמתם לסעודה ✓ מחכים לכם!');
+      if (res.pendingSeudot.length > 0 && res.approvedSeudot.length > 0) {
+        showToast('חלק מהסעודות אושרו ✓ והשאר נשלחו לבדיקה — נעדכן אתכם');
+      } else if (res.pendingSeudot.length > 0) {
+        showToast('בקשתכם נשלחה לבדיקה ✓ נעדכן אתכם לאחר הבדיקה');
+      } else {
+        showToast('נרשמתם לסעודה ✓ מחכים לכם!');
+      }
       setRegModal(false);
     } catch (e: unknown) {
       showToast((e as Error).message || 'שגיאה', 'error');
@@ -212,9 +258,20 @@ export function Seudot({ user, isAdmin }: SeudotProps) {
     }
   }
 
-  async function handleDeleteRegistration(id: string) {
+  async function handleDeleteRegistration(r: SeudahRegistration) {
     try {
-      await deleteDoc(doc(db, 'seudahRegistrations', id));
+      // Cancelling may free a place — the oldest pending request (if any) is
+      // approved automatically inside a transaction.
+      const st = meals.bySeudahId[r.seudahId];
+      await cancelRegistrationAndPromote({
+        reg: r,
+        config: mealConfig,
+        seudah: st?.seudah,
+        mealRegs: st ? [...st.registrations, ...st.pendingRegistrations] : [],
+        mealBookings: st?.roomGuests ?? [],
+        familiesById,
+        uid: user?.uid || '',
+      });
       showToast('הרישום הוסר');
     } catch (e: unknown) {
       showToast((e as Error).message || 'שגיאה', 'error');
@@ -227,11 +284,10 @@ export function Seudot({ user, isAdmin }: SeudotProps) {
     label: `${e.title} — ${formatDateByMode(e.date?.toDate?.() ?? null, calMode, 'short')}`,
   }));
 
-  // Event total includes the automatic attendees of every seudah
-  const totalDiners =
-    eventRegs.reduce((s, r) => s + (r.diners || 0), 0) +
-    eventSeudot.length * AUTO_ATTENDEES_COUNT;
-  const totalFamilies = new Set(eventRegs.map(r => r.familyId)).size;
+  // Event total includes the automatic attendees of every seudah, direct
+  // registrations, and room bookings that opted into each meal.
+  const totalDiners = meals.totalDiners;
+  const totalFamilies = meals.totalFamilies;
   const residentNames = HOUSEHOLD_RESIDENTS.map(p => p.name).join(', ');
   const permanentGuestNames = PERMANENT_GUESTS.map(p => p.name).join(', ');
 
@@ -243,9 +299,20 @@ export function Seudot({ user, isAdmin }: SeudotProps) {
           <h1 className="text-2xl font-bold text-primary">🍽 סעודות</h1>
           <p className="text-text-muted text-sm mt-0.5">אירוח סעודות שבת וחג</p>
         </div>
-        <Button onClick={() => { setNewTypes([]); setAddModal(true); }} disabled={!eventId}>
-          <Plus size={16} /> הוסף סעודה
-        </Button>
+        {isAdmin && (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate(eventId ? `/report/${eventId}` : '/report')}
+              disabled={!eventId}
+            >
+              <ClipboardList size={16} /> דוח שבת / חג
+            </Button>
+            <Button onClick={() => { setNewTypes([]); setAddModal(true); }} disabled={!eventId || !canAct}>
+              <Plus size={16} /> הוסף סעודה
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Event + stats */}
@@ -275,23 +342,39 @@ export function Seudot({ user, isAdmin }: SeudotProps) {
             </div>
           </div>
         </div>
+        {isClosed && (
+          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700 flex items-center gap-2">
+            <Lock size={14} />
+            ההרשמה סגורה — ההרשמה לשינה ולסעודות סגורה לאירוע זה{isAdmin ? ' (לפתיחה מחדש — כפתור "פתח הזמנות" בעמוד החדרים)' : ''}
+          </div>
+        )}
       </Card>
+
+      {/* Guest-family limit configuration — hosts and admins only */}
+      {event && isHost && limitApplies && (
+        <FamilyLimitPanel
+          event={event}
+          config={mealConfig}
+          perSeudah={meals.perSeudah}
+          families={families}
+          familiesById={familiesById}
+          uid={user?.uid || ''}
+          familyLabel={familyName}
+        />
+      )}
 
       {/* Seudot of the selected event */}
       {!eventId ? (
         <EmptyState icon="🍽" title="בחר שבת או חג כדי לצפות בסעודות" />
-      ) : !loading && eventSeudot.length === 0 ? (
-        <EmptyState
-          icon="🍽"
-          title="אין סעודות עדיין"
-          description="הוסף סעודה לשבת או חג"
-          action={{ label: 'הוסף סעודה', onClick: () => { setNewTypes([]); setAddModal(true); } }}
-        />
       ) : (
         <div className="space-y-5">
-          {eventSeudot.map(s => {
-            const regs = regsBySeudah[s.id] || [];
-            const diners = dinersOf(s.id);
+          {meals.perSeudah.map(({ seudah: s, registrations: regs, pendingRegistrations, roomGuests, diners, partyCount }) => {
+            // A pending request is visible only to whoever submitted it, the
+            // host and admins — with a neutral "waiting for review" badge.
+            const visiblePending = pendingRegistrations.filter(
+              r => isAdmin || isHost || r.createdBy === user?.uid
+            );
+            const myRejectedHere = myRejected.filter(r => r.seudahId === s.id);
             return (
               <motion.div key={s.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
                 <Card padding="none">
@@ -304,7 +387,7 @@ export function Seudot({ user, isAdmin }: SeudotProps) {
                         <Badge variant={diners > 20 ? 'error' : diners > 10 ? 'warning' : 'success'}>
                           <Users size={12} /> {diners} סועדים
                         </Badge>
-                        {(isAdmin || s.createdBy === user?.uid) && (
+                        {!s.synthetic && (isAdmin || s.createdBy === user?.uid) && (
                           <button
                             onClick={() => handleDeleteSeudah(s)}
                             className="p-1.5 text-text-muted hover:text-error transition-colors rounded"
@@ -318,9 +401,9 @@ export function Seudot({ user, isAdmin }: SeudotProps) {
                     <div className="mt-2.5">
                       <LoadBar diners={diners} />
                       <p className="text-xs text-text-muted mt-1">
-                        {regs.length === 0
-                          ? `בני הבית ואורחת קבועה בלבד · ${AUTO_ATTENDEES_COUNT} סועדים`
-                          : `${regs.length} משפחות + בני הבית · ${diners} סועדים`}
+                        {partyCount === 0
+                          ? `בני הבית ואורח קבוע בלבד · ${AUTO_ATTENDEES_COUNT} סועדים`
+                          : `${partyCount} משפחות + בני הבית · ${diners} סועדים`}
                       </p>
                     </div>
                   </div>
@@ -346,7 +429,7 @@ export function Seudot({ user, isAdmin }: SeudotProps) {
                           <span className="text-text-muted font-normal"> · {PERMANENT_GUESTS.length} סועדים</span>
                         </p>
                         <p className="text-xs text-text-muted mt-0.5">
-                          אורחת קבועה · ללא לינה
+                          אורח קבוע · ללא לינה
                         </p>
                       </div>
                       <Badge variant="accent">קבוע</Badge>
@@ -366,10 +449,13 @@ export function Seudot({ user, isAdmin }: SeudotProps) {
                               {r.bringing && (
                                 <p className="text-xs text-text-muted mt-0.5">🧺 מביאים: {r.bringing}</p>
                               )}
+                              {r.promotedAfterWait && r.createdBy === user?.uid && (
+                                <p className="text-xs text-green-700 mt-0.5">🎉 התפנה מקום ובקשתכם אושרה</p>
+                              )}
                             </div>
                             {(isAdmin || r.createdBy === user?.uid) && (
                               <button
-                                onClick={() => handleDeleteRegistration(r.id)}
+                                onClick={() => handleDeleteRegistration(r)}
                                 className="p-1.5 text-text-muted hover:text-error transition-colors rounded"
                                 aria-label="הסר רישום"
                               >
@@ -380,9 +466,89 @@ export function Seudot({ user, isAdmin }: SeudotProps) {
                         ))}
                       </div>
                     )}
-                    <Button variant="outline" size="sm" onClick={() => openRegModal(s.id)}>
-                      🙋 אני מגיע/ה לסעודה
-                    </Button>
+                    {visiblePending.length > 0 && (
+                      <div className="space-y-2 mb-4">
+                        {visiblePending.map(r => (
+                          <div
+                            key={r.id}
+                            className="flex items-center gap-3 p-3 bg-amber-50/60 rounded-md border border-amber-200"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm text-text-base">
+                                משפחת {r.familyName}
+                                <span className="text-text-muted font-normal"> · {r.diners} סועדים</span>
+                              </p>
+                              <p className="text-xs text-text-muted mt-0.5">
+                                הבקשה נשלחה לבדיקה · נעדכן לאחר הבדיקה
+                              </p>
+                            </div>
+                            <Badge variant="warning">ממתין לבדיקה</Badge>
+                            {(isAdmin || r.createdBy === user?.uid) && (
+                              <button
+                                onClick={() => handleDeleteRegistration(r)}
+                                className="p-1.5 text-text-muted hover:text-error transition-colors rounded"
+                                aria-label="בטל בקשה"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {myRejectedHere.length > 0 && (
+                      <div className="space-y-2 mb-4">
+                        {myRejectedHere.map(r => (
+                          <div
+                            key={r.id}
+                            className="flex items-center gap-3 p-3 bg-surface-alt rounded-md border border-border"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm text-text-base">משפחת {r.familyName}</p>
+                              <p className="text-xs text-text-muted mt-0.5">
+                                לא ניתן היה לאשר את ההשתתפות בסעודה זו.
+                              </p>
+                            </div>
+                            <Badge variant="default">לא אושר</Badge>
+                            {(isAdmin || r.createdBy === user?.uid) && (
+                              <button
+                                onClick={() => handleDeleteRegistration(r)}
+                                className="p-1.5 text-text-muted hover:text-error transition-colors rounded"
+                                aria-label="הסר"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {roomGuests.length > 0 && (
+                      <div className="space-y-2 mb-4">
+                        {roomGuests.map(b => (
+                          <div
+                            key={b.id}
+                            className="flex items-center gap-3 p-3 bg-surface-alt rounded-md border border-border"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm text-text-base">
+                                {b.isExternalGuest ? '👤 ' : 'משפחת '}{b.familyName}
+                                <span className="text-text-muted font-normal"> · {bookingDiners(b)} סועדים</span>
+                              </p>
+                              <p className="text-xs text-text-muted mt-0.5">🛏 מתארחים ללינה · נספרים מהזמנת החדר</p>
+                            </div>
+                            <Badge variant="accent">חדר</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {isClosed ? (
+                      <Badge variant="error"><Lock size={10} /> ההרשמה סגורה</Badge>
+                    ) : (
+                      <Button variant="outline" size="sm" onClick={() => openRegModal(s.id)}>
+                        🙋 אני מגיע/ה לסעודה
+                      </Button>
+                    )}
                   </div>
                 </Card>
               </motion.div>

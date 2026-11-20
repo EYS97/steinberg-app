@@ -48,7 +48,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "deploy": "npm run build && firebase deploy --only hosting"
+    "copy-dist": "node scripts/copy-dist-to-public.mjs",
+    "deploy": "npm run build && npm run copy-dist && firebase deploy --only hosting"
   },
   "browserslist": {
     "production": [

@@ -134,6 +134,12 @@ export interface AugustTimelineItem {
   /** "HH:MM" 24h */
   startTime: string;
   endTime: string;
+  /**
+   * Shared-event group (family holidays): every member's copy carries the same
+   * groupId so one edit/delete fans out to all of them. Optional — items created
+   * before the field existed group implicitly by (type, title, date, endDate).
+   */
+  groupId?: string;
   responsiblePersonId?: string;
   dropOffPersonId?: string;
   pickUpPersonId?: string;

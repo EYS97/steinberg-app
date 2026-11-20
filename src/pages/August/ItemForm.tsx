@@ -7,6 +7,7 @@ import {
   AUGUST_ITEM_TYPES, AUGUST_TYPE_ICONS, TIME_REQUIRED_TYPES,
 } from '@/types/august';
 import { timeToMinutes } from '@/lib/august/plan';
+import { isFamilyHoliday, newGroupId } from '@/lib/august/holiday';
 import type { AugustMember, AugustTimelineItem, AugustItemType } from '@/types/august';
 
 export type ItemDraft = Omit<AugustTimelineItem, 'id' | 'planId' | 'nuclearFamilyId' | 'createdAt' | 'updatedAt'>;
@@ -22,7 +23,11 @@ interface ItemFormProps {
   defaultPersonId?: string;
   /** Pre-selected type for quick-add buttons. */
   defaultType?: AugustItemType;
+  /** Prefill for gap quick-fix ("assign a parent") — merged over the empty draft. */
+  defaultDraft?: Partial<ItemDraft>;
   onSubmit: (draft: ItemDraft) => Promise<void>;
+  /** Atomic multi-add for family-holiday fan-out; falls back to onSubmit per copy. */
+  onSubmitMany?: (drafts: ItemDraft[]) => Promise<void>;
 }
 
 const TYPE_OPTIONS = AUGUST_ITEM_TYPES.map(t => ({ value: t, label: `${AUGUST_TYPE_ICONS[t]} ${t}` }));
@@ -50,7 +55,7 @@ function emptyDraft(date: string, personId: string): ItemDraft {
 }
 
 export function ItemForm({
-  open, onClose, date, members, editing, defaultPersonId, defaultType, onSubmit,
+  open, onClose, date, members, editing, defaultPersonId, defaultType, defaultDraft, onSubmit, onSubmitMany,
 }: ItemFormProps) {
   const { showToast } = useToast();
   const [form, setForm] = useState<ItemDraft>(() => emptyDraft(date, defaultPersonId ?? ''));
@@ -64,9 +69,13 @@ export function ItemForm({
       setForm(rest);
     } else {
       const fresh = emptyDraft(date, defaultPersonId ?? members[0]?.id ?? '');
-      setForm(defaultType ? { ...fresh, type: defaultType } : fresh);
+      setForm({
+        ...fresh,
+        ...(defaultType ? { type: defaultType } : {}),
+        ...(defaultDraft ?? {}),
+      });
     }
-  }, [open, editing, date, defaultPersonId, defaultType, members]);
+  }, [open, editing, date, defaultPersonId, defaultType, defaultDraft, members]);
 
   function set<K extends keyof ItemDraft>(key: K, value: ItemDraft[K]) {
     setForm(f => ({ ...f, [key]: value }));
@@ -76,11 +85,12 @@ export function ItemForm({
   const optionalPersonOptions = [{ value: '', label: '— ללא —' }, ...personOptions];
   const timeRequired = TIME_REQUIRED_TYPES.includes(form.type);
   const isMultiDay = !!form.endDate && form.endDate > form.date;
-  // A family vacation belongs to everyone — when adding, we lock the person field
-  // and fan the item out to every member on save (editing one instance stays
-  // single, so you can tweak just that person's copy).
-  const isFamilyHoliday = form.type === 'חופשה משפחתית';
-  const applyToAll = isFamilyHoliday && !editing;
+  // A family vacation belongs to everyone. Adding one fans it out to every
+  // member as copies sharing a groupId; editing any copy is a shared-event edit
+  // that the page fans back out to the whole group (person lock + notice here).
+  const holidayType = isFamilyHoliday(form);
+  const applyToAll = holidayType && !editing;
+  const editingHoliday = holidayType && !!editing;
 
   function toggleDay(dow: number) {
     setForm(f => {
@@ -118,19 +128,23 @@ export function ItemForm({
     setSaving(true);
     try {
       if (applyToAll) {
-        // One copy per member. Cost is a single family total — attach it to the
-        // first copy only so the rollup doesn't multiply it by member count.
-        // Drop person-specific transport assignments for the blanket vacation.
-        for (let i = 0; i < members.length; i++) {
-          await onSubmit({
-            ...payload,
-            personId: members[i].id,
-            cost: i === 0 ? payload.cost : undefined,
-            responsiblePersonId: undefined,
-            dropOffPersonId: undefined,
-            pickUpPersonId: undefined,
-          });
-        }
+        // One copy per member, all stamped with the same groupId — that shared
+        // id is what makes them ONE event for later edits/deletes. Cost is a
+        // single family total — attach it to the first copy only so the rollup
+        // doesn't multiply it by member count. Drop person-specific transport
+        // assignments for the blanket vacation.
+        const groupId = newGroupId();
+        const copies = members.map((m, i) => ({
+          ...payload,
+          groupId,
+          personId: m.id,
+          cost: i === 0 ? payload.cost : undefined,
+          responsiblePersonId: undefined,
+          dropOffPersonId: undefined,
+          pickUpPersonId: undefined,
+        }));
+        if (onSubmitMany) await onSubmitMany(copies);
+        else for (const c of copies) await onSubmit(c);
       } else {
         await onSubmit(payload);
       }
@@ -156,6 +170,11 @@ export function ItemForm({
       }
     >
       <div className="space-y-4">
+        {editingHoliday && (
+          <p className="text-xs rounded-md bg-cyan-50 text-cyan-800 border border-cyan-200 px-3 py-2">
+            🏖 חופשה משפחתית — שינויים בתאריכים, בשעות ובפרטים יחולו על כל בני המשפחה.
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-3">
           {applyToAll ? (
             <div className="flex flex-col gap-1">

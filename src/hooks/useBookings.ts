@@ -7,6 +7,7 @@ import {
   addDoc,
   deleteDoc,
   doc,
+  getDoc,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/firebase/config';
@@ -44,9 +45,27 @@ export function useBookingsForEvent(eventId: string | null) {
   return { bookings, loading };
 }
 
-export async function addBooking(booking: Omit<Booking, 'id' | 'createdAt'>): Promise<void> {
+// Sleeping and meals are one registration: when an event is in settings/closedEvents
+// it is fully closed. Re-reads the list at write time so stale UI / old links can't bypass.
+export async function assertEventOpen(eventId: string, isAdmin = false): Promise<void> {
+  if (isAdmin) return;
+  const snap = await getDoc(doc(db, 'settings', 'closedEvents'));
+  const ids: string[] = snap.exists() ? snap.data().ids || [] : [];
+  if (ids.includes(eventId)) {
+    throw new Error('ההרשמה לשינה ולסעודות סגורה לאירוע זה');
+  }
+}
+
+export async function addBooking(
+  booking: Omit<Booking, 'id' | 'createdAt'>,
+  isAdmin = false
+): Promise<void> {
+  await assertEventOpen(booking.eventId, isAdmin);
+  // Firestore rejects undefined field values; only stamp createdBy when present.
+  const { createdBy, ...rest } = booking;
   await addDoc(collection(db, 'bookings'), {
-    ...booking,
+    ...rest,
+    ...(createdBy ? { createdBy } : {}),
     createdAt: serverTimestamp(),
   });
 }
