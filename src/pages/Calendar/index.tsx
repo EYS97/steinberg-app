@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toIsoDay } from '@/lib/annualItems';
 import { ChevronRight, ChevronLeft, Plus, Trash2 } from 'lucide-react';
 import { collection, addDoc, deleteDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from '@/firebase/config';
@@ -82,10 +84,13 @@ interface DayEntry {
   title: string;
   typeLabel: string;
   recurrence?: string;
+  /** Deep link to edit the underlying birthday / memorial */
+  editPath?: string;
 }
 
 export function Calendar({ user, isAdmin }: CalendarProps) {
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const { data: events, loading } = useEvents();
   const { bookings } = useAllBookings();
   const { data: birthdays } = useBirthdays();
@@ -173,6 +178,7 @@ export function Calendar({ user, isAdmin }: CalendarProps) {
           icon: BIRTHDAY_STYLE.icon, color: BIRTHDAY_STYLE.color, title: b.name,
           typeLabel: BIRTHDAY_STYLE.label,
           recurrence: b.calendarType === 'hebrew' ? 'לפי התאריך העברי' : 'לפי התאריך הלועזי',
+          editPath: `/notifications?tab=birthdays&edit=${b.id}`,
         });
       });
     });
@@ -183,6 +189,7 @@ export function Calendar({ user, isAdmin }: CalendarProps) {
           icon: MEMORIAL_STYLE.icon, color: MEMORIAL_STYLE.color, title: m.name,
           typeLabel: MEMORIAL_STYLE.label,
           recurrence: m.calendarType === 'hebrew' ? 'לפי התאריך העברי' : 'לפי התאריך הלועזי',
+          editPath: `/notifications?tab=memorials&edit=${m.id}`,
         });
       });
     });
@@ -538,18 +545,37 @@ export function Calendar({ user, isAdmin }: CalendarProps) {
               <p className="text-sm text-text-muted text-center py-2">אין אירועים ביום זה</p>
             ) : (
               <div className="space-y-2">
-                {selectedEntries.map((en, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 bg-surface-alt rounded-md">
-                    <span className="text-lg" style={{ color: en.color }}>{en.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm text-text-base">{en.title}</p>
-                      <p className="text-xs text-text-muted">{en.typeLabel}</p>
-                      {en.recurrence && <p className="text-[10px] text-accent">🔁 {en.recurrence}</p>}
-                    </div>
-                  </div>
-                ))}
+                {selectedEntries.map((en, i) => {
+                  const body = (
+                    <>
+                      <span className="text-lg" style={{ color: en.color }}>{en.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm text-text-base">{en.title}</p>
+                        <p className="text-xs text-text-muted">{en.typeLabel}</p>
+                        {en.recurrence && <p className="text-[10px] text-accent">🔁 {en.recurrence}</p>}
+                      </div>
+                      {en.editPath && <span className="text-xs text-accent self-center">עריכה ›</span>}
+                    </>
+                  );
+                  return en.editPath ? (
+                    <button key={i} type="button" onClick={() => navigate(en.editPath!)}
+                      className="w-full text-right flex items-start gap-3 p-3 bg-surface-alt rounded-md hover:bg-accent/5 transition-colors">
+                      {body}
+                    </button>
+                  ) : (
+                    <div key={i} className="flex items-start gap-3 p-3 bg-surface-alt rounded-md">{body}</div>
+                  );
+                })}
               </div>
             )}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <Button variant="outline" size="sm" onClick={() => navigate(`/notifications?tab=birthdays&add=1&date=${toIsoDay(selectedDay)}`)}>
+                <Plus size={14} /> יום הולדת ביום זה
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate(`/notifications?tab=memorials&add=1&date=${toIsoDay(selectedDay)}`)}>
+                <Plus size={14} /> יום זיכרון ביום זה
+              </Button>
+            </div>
           </div>
         )}
       </Modal>

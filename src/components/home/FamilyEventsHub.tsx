@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Plus } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { formatHebrewDateShort, formatGregorianDate } from '@/lib/dates';
@@ -47,23 +47,32 @@ interface FamilyEventsHubProps {
   onSelect: (event: FamilyEvent) => void;
   /** Optional "view all" action in the header */
   onViewAll?: () => void;
+  /** Optional "add birthday" action in the header */
+  onAdd?: () => void;
   className?: string;
 }
 
-export function FamilyEventsHub({ events, onSelect, onViewAll, className }: FamilyEventsHubProps) {
+export function FamilyEventsHub({ events, onSelect, onViewAll, onAdd, className }: FamilyEventsHubProps) {
   return (
     <section className={className}>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base sm:text-lg font-bold text-primary flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <h2 className="text-base sm:text-lg font-bold text-primary flex items-center gap-2 min-w-0">
           <span aria-hidden="true">🎉</span>
           אירועים משפחתיים קרובים
         </h2>
+        <div className="flex items-center gap-1 shrink-0">
+        {onAdd && (
+          <Button variant="ghost" size="sm" className="whitespace-nowrap" onClick={onAdd} aria-label="הוסף יום הולדת">
+            <Plus size={14} /> יום הולדת
+          </Button>
+        )}
         {onViewAll && (
-          <Button variant="ghost" size="sm" onClick={onViewAll}>
+          <Button variant="ghost" size="sm" className="whitespace-nowrap" onClick={onViewAll}>
             לוח שנה
             <ChevronLeft size={14} />
           </Button>
         )}
+        </div>
       </div>
 
       <Card padding="sm">

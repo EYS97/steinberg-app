@@ -664,7 +664,11 @@ export function Home({ user, isAdmin }: HomeProps) {
             <motion.div variants={stagger.item}>
               <FamilyEventsHub
                 events={familyEvents}
-                onSelect={() => navigate('/calendar')}
+                onSelect={ev =>
+                  ev.kind === 'birthday' ? navigate(`/notifications?tab=birthdays&edit=${ev.sourceId}`)
+                  : ev.kind === 'yahrzeit' ? navigate(`/notifications?tab=memorials&edit=${ev.sourceId}`)
+                  : navigate('/calendar')}
+                onAdd={() => navigate('/notifications?tab=birthdays&add=1')}
                 onViewAll={() => navigate('/calendar')}
               />
             </motion.div>

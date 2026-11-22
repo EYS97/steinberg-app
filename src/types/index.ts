@@ -492,7 +492,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'family',        label: 'משפחה',      icon: '👨‍👩‍👧‍👦', path: '/family',        showInMobile: true },
   { id: 'august',        label: 'אוגוסט',     icon: '🏖', path: '/august',        showInMobile: true },
   { id: 'family-tree',   label: 'עץ משפחה',  icon: '🌳', path: '/family-tree',   showInMobile: false },
-  { id: 'notifications', label: 'התראות',     icon: '🔔', path: '/notifications', showInMobile: false },
+  { id: 'notifications', label: 'תאריכים',    icon: '🎂', path: '/notifications', showInMobile: true },
   { id: 'settings',      label: 'הגדרות',     icon: '⚙', path: '/settings',      showInMobile: false },
   { id: 'admin',         label: 'ניהול',      icon: '🛡', path: '/admin',         adminOnly: true, showInMobile: true },
 ];
